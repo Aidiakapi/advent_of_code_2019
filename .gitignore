@@ -1,4 +1,5 @@
 /target
 **/*.rs.bk
 .vscode/settings.json
+.vscode/rust.code-snippets
 token.txt
