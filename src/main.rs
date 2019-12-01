@@ -31,7 +31,7 @@ macro_rules! gen_main {
 }
 
 gen_main!(
-    
+    day01
 );
 
 fn get_exclusive_module() -> Option<String> {
@@ -74,7 +74,12 @@ fn execute_module_callback(closure: &mut Closure, msg: module::Message<'static>)
                     }
                 }
                 Err(err) => {
-                    println!("\n{} {}\n{}", "error:".bright_red().bold().underline(), err, format!("{:?}", err).red());
+                    println!(
+                        "\n{} {}\n{}",
+                        "error:".bright_red().bold().underline(),
+                        err,
+                        format!("{:?}", err).red()
+                    );
                 }
             }
         }
@@ -90,7 +95,7 @@ where
         Ok(input) => {
             let mut last_part = None;
             executor(
-                &input,
+                input.trim(),
                 Closure {
                     module_name,
                     stdout: &mut stdout,

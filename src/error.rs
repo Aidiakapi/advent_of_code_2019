@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use thiserror::Error;
 
+#[allow(dead_code)]
 #[derive(Error, Debug)]
 pub enum AoCError {
     #[error("parse int error")]
