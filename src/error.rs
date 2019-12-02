@@ -12,6 +12,8 @@ pub enum AoCError {
     NomParse(String),
     #[error("incomplete parse (remainder {remainder:?})")]
     IncompleteParse { remainder: String },
+    #[error("intcode error {0}")]
+    Intcode(#[from] crate::intcode::Error),
     #[error("no possible solution found")]
     NoSolution,
     #[error("logic error ({0})")]

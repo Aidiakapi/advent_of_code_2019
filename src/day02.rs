@@ -1,60 +1,54 @@
 module!(pt1: parse, pt2: parse);
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct Program {
-    memory: Vec<usize>,
+use crate::intcode::{run_intcode, Instruction, Memory, Value, Result as icResult};
+
+struct Add;
+struct Mul;
+struct Halt;
+impl Instruction for Add {
+    const OPCODE: Value = 1;
+    fn execute<M: Memory>(m: &mut M, ip: &mut Value) -> icResult<bool> {
+        let operands = m.range(*ip + 1..*ip + 4)?;
+        let (a, b, c) = (operands[0], operands[1], operands[2]);
+        *m.access_mut(c)? = *m.access(a)? + *m.access(b)?;
+        *ip += 4;
+        Ok(true)
+    }
 }
-
-impl Program {
-    fn run_till_halt(&mut self) -> Result<()> {
-        const OUT_OF_RANGE: AoCError = AoCError::Logic("index out of range");
-
-        let mut ip = 0;
-        loop {
-            match *self.memory.get(ip).ok_or(OUT_OF_RANGE)? {
-                x @ 1 | x @ 2 => {
-                    let a = *self
-                        .memory
-                        .get(*self.memory.get(ip + 1).ok_or(OUT_OF_RANGE)?)
-                        .ok_or(OUT_OF_RANGE)?;
-                    let b = *self
-                        .memory
-                        .get(*self.memory.get(ip + 2).ok_or(OUT_OF_RANGE)?)
-                        .ok_or(OUT_OF_RANGE)?;
-                    let c = if x == 1 { a + b } else { a * b };
-                    let idx = *self.memory.get(ip + 3).ok_or(OUT_OF_RANGE)?;
-                    *self.memory.get_mut(idx).ok_or(OUT_OF_RANGE)? = c;
-                    ip += 4;
-                }
-                99 => {
-                    return Ok(());
-                }
-                _ => {
-                    return Err(AoCError::Logic("invalid opcode"));
-                }
-            }
-        }
+impl Instruction for Mul {
+    const OPCODE: Value = 2;
+    fn execute<M: Memory>(m: &mut M, ip: &mut Value) -> icResult<bool> {
+        let operands = m.range(*ip + 1..*ip + 4)?;
+        let (a, b, c) = (operands[0], operands[1], operands[2]);
+        *m.access_mut(c)? = *m.access(a)? * *m.access(b)?;
+        *ip += 4;
+        Ok(true)
+    }
+}
+impl Instruction for Halt {
+    const OPCODE: Value = 99;
+    fn execute<M: Memory>(_m: &mut M, _ip: &mut Value) -> icResult<bool> {
+        Ok(false)
     }
 }
 
-fn pt1(mut memory: Vec<usize>) -> Result<usize> {
+type Instructions = (Add, Mul, Halt);
+
+fn pt1(mut memory: Vec<i64>) -> Result<i64> {
     memory[1] = 12;
     memory[2] = 2;
-    let mut program = Program { memory };
-    program.run_till_halt()?;
-    Ok(program.memory[0])
+    run_intcode::<Instructions, _>(&mut memory, 0)?;
+    Ok(memory[0])
 }
 
-fn pt2(mut memory: Vec<usize>) -> Result<usize> {
+fn pt2(mut memory: Vec<i64>) -> Result<i64> {
     for noun in 0..=99 {
         memory[1] = noun;
         for verb in 0..=99 {
             memory[2] = verb;
-            let mut program = Program {
-                memory: memory.clone(),
-            };
-            program.run_till_halt()?;
-            if program.memory[0] == 19690720 {
+            let mut memory = memory.clone();
+            run_intcode::<Instructions, _>(&mut memory, 0)?;
+            if memory[0] == 19690720 {
                 return Ok(noun * 100 + verb);
             }
         }
@@ -62,7 +56,7 @@ fn pt2(mut memory: Vec<usize>) -> Result<usize> {
     Err(AoCError::NoSolution)
 }
 
-fn parse(s: &str) -> IResult<&str, Vec<usize>> {
+fn parse(s: &str) -> IResult<&str, Vec<i64>> {
     use parsers::*;
-    separated_list(char(','), usize_str)(s)
+    separated_list(char(','), i64_str)(s)
 }

@@ -1,9 +1,10 @@
 #![feature(optin_builtin_traits)]
 
 pub(crate) mod error;
-pub(crate) mod parsers;
+pub(crate) mod intcode;
 #[macro_use]
 pub(crate) mod module;
+pub(crate) mod parsers;
 
 macro_rules! gen_main {
     ($($mod_name:ident)*) => {
