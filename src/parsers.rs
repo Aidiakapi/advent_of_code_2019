@@ -1,6 +1,6 @@
 #![allow(unused_imports)]
 pub use nom::{
-    character::complete::{digit1, line_ending, one_of},
+    character::complete::{char, digit1, line_ending, one_of},
     combinator::{map, map_res, opt},
     error::ErrorKind,
     multi::{many1, separated_list},

@@ -14,6 +14,8 @@ pub enum AoCError {
     IncompleteParse { remainder: String },
     #[error("no possible solution found")]
     NoSolution,
+    #[error("logic error ({0})")]
+    Logic(&'static str),
 }
 
 impl<E: Debug> From<nom::Err<E>> for AoCError {

@@ -32,6 +32,7 @@ macro_rules! gen_main {
 
 gen_main!(
     day01
+    day02
 );
 
 fn get_exclusive_module() -> Option<String> {
