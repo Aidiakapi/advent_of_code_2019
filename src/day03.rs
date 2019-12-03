@@ -2,81 +2,75 @@ module!(pt1: parse, pt2: parse);
 
 use hashbrown::{HashMap, HashSet};
 use num::traits::Zero;
+use std::iter::FromIterator;
 
 type Vec2 = crate::vec2::Vec2<i64>;
 type Wire = Vec<Command>;
 
-fn for_each_position<I, F>(commands: I, mut callback: F)
+struct WireIter<I>
+where
+    I: Iterator<Item = Command>,
+{
+    iter: I,
+    curr: Option<Command>,
+    pos: Vec2,
+}
+
+impl<I> Iterator for WireIter<I>
+where
+    I: Iterator<Item = Command>,
+{
+    type Item = Vec2;
+    fn next(&mut self) -> Option<Vec2> {
+        let mut curr = self.curr.as_mut()?;
+        while curr.distance == 0 {
+            self.curr = self.iter.next();
+            curr = self.curr.as_mut()?;
+        }
+        curr.distance -= 1;
+        curr.direction.modify_position(&mut self.pos, 1);
+        Some(self.pos)
+    }
+}
+
+fn iter_wire<I>(iter: I) -> WireIter<I::IntoIter>
 where
     I: IntoIterator<Item = Command>,
-    F: FnMut(Vec2) -> (),
 {
-    let mut position = Vec2::zero();
-    for command in commands {
-        for _ in 0..command.distance {
-            match command.direction {
-                Direction::Left => position.x -= 1,
-                Direction::Up => position.y -= 1,
-                Direction::Right => position.x += 1,
-                Direction::Down => position.y += 1,
-            }
-            callback(position);
-        }
+    let mut iter = iter.into_iter();
+    let curr = iter.next();
+    WireIter {
+        iter,
+        curr,
+        pos: Vec2::zero(),
     }
 }
 
 fn pt1(wires: (Wire, Wire)) -> Result<i64> {
-    let mut wire1_positions = HashSet::new();
-    let mut collisions = HashSet::new();
-
-    for_each_position(wires.0.into_iter(), |position| {
-        wire1_positions.insert(position);
-    });
-
-    for_each_position(wires.1.into_iter(), |position| {
-        if wire1_positions.contains(&position) {
-            collisions.insert(position);
-        }
-    });
-
-    collisions
-        .iter()
-        .map(|position| position.x.abs() + position.y.abs())
+    let wire1_positions: HashSet<Vec2> = HashSet::from_iter(iter_wire(wires.0));
+    iter_wire(wires.1)
+        .filter(|pos| wire1_positions.contains(pos))
+        .map(|pos| pos.x.abs() + pos.y.abs())
         .min()
         .ok_or(AoCError::NoSolution)
 }
 
-fn pt2(wires: (Wire, Wire)) -> Result<i64> {
-    let mut wire1_positions = HashMap::new();
-    let mut collisions = HashMap::new();
-
-    let mut distance = 0;
-    for_each_position(wires.0.into_iter(), |position| {
-        distance += 1;
-        wire1_positions.entry(position).or_insert(distance);
-    });
-    distance = 0;
-    for_each_position(wires.1.into_iter(), |position| {
-        distance += 1;
-        if wire1_positions.contains_key(&position) {
-            collisions.entry(position).or_insert(distance);
-        }
-    });
-
-    collisions
-        .into_iter()
-        .map(|(position, distance2)| {
-            let distance1 = wire1_positions[&position];
-            distance1 + distance2
-        })
+fn pt2(wires: (Wire, Wire)) -> Result<usize> {
+    let wire1_positions: HashMap<Vec2, usize> =
+        HashMap::from_iter(iter_wire(wires.0).enumerate().map(|(idx, pos)| (pos, idx)));
+    iter_wire(wires.1)
+        .enumerate()
+        .filter_map(|(dist2, pos)| wire1_positions.get(&pos).map(|dist1| dist1 + dist2))
         .min()
+        // add 2 to correct for .enumerate() starting at 0 instead of 1
+        .map(|distance| distance + 2)
         .ok_or(AoCError::NoSolution)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Command {
     direction: Direction,
-    distance: i64,
+    distance: usize,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -85,6 +79,17 @@ enum Direction {
     Up,
     Right,
     Down,
+}
+
+impl Direction {
+    pub fn modify_position(&self, pos: &mut Vec2, distance: i64) {
+        match *self {
+            Direction::Left => pos.x -= distance,
+            Direction::Up => pos.y -= distance,
+            Direction::Right => pos.x += distance,
+            Direction::Down => pos.y += distance,
+        }
+    }
 }
 
 fn parse(s: &str) -> IResult<&str, (Wire, Wire)> {
@@ -96,9 +101,11 @@ fn parse(s: &str) -> IResult<&str, (Wire, Wire)> {
         'D' => Direction::Down,
         _ => unreachable!(),
     });
-    let command = map(pair(direction, u32_str), |(direction, distance)| Command {
-        direction,
-        distance: distance as i64,
+    let command = map(pair(direction, usize_str), |(direction, distance)| {
+        Command {
+            direction,
+            distance,
+        }
     });
     let wire_commands = separated_list(char(','), command);
     map_res(separated_list(line_ending, wire_commands), |wires| {
