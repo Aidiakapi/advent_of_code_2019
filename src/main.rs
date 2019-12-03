@@ -1,4 +1,6 @@
-#![feature(optin_builtin_traits)]
+#![feature(optin_builtin_traits, test)]
+
+extern crate test;
 
 pub(crate) mod error;
 pub(crate) mod intcode;

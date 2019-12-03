@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 colored = "1.9"
+hashbrown = "0.6"
 nom = "5.0"
 num = "0.2"
 thiserror = "1.0"

@@ -1,7 +1,7 @@
 module!(pt1: parse, pt2: parse);
 
+use hashbrown::{HashMap, HashSet};
 use num::traits::Zero;
-use std::collections::{HashMap, HashSet};
 
 type Vec2 = crate::vec2::Vec2<i64>;
 type Wire = Vec<Command>;
@@ -110,4 +110,24 @@ fn parse(s: &str) -> IResult<&str, (Wire, Wire)> {
         let b = iter.next().unwrap();
         return Ok((a, b));
     })(s)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use ::test::{black_box, Bencher};
+
+    #[bench]
+    fn day03_pt1(b: &mut Bencher) {
+        let input = std::fs::read_to_string("./data/day03.txt").unwrap();
+        let input = input.trim();
+        b.iter(|| pt1(parse(black_box(input)).unwrap().1));
+    }
+
+    #[bench]
+    fn day03_pt2(b: &mut Bencher) {
+        let input = std::fs::read_to_string("./data/day03.txt").unwrap();
+        let input = input.trim();
+        b.iter(|| pt2(parse(black_box(input)).unwrap().1));
+    }
 }
