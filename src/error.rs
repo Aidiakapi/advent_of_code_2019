@@ -18,6 +18,8 @@ pub enum AoCError {
     NoSolution,
     #[error("logic error ({0})")]
     Logic(&'static str),
+    #[error("incorrect input ({0})")]
+    IncorrectInput(&'static str),
 }
 
 impl<E: Debug> From<nom::Err<E>> for AoCError {

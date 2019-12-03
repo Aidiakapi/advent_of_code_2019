@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use num::ToPrimitive;
 use thiserror::Error;
 use std::ops::Range;

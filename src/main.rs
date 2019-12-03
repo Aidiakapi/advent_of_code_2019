@@ -6,6 +6,10 @@ pub(crate) mod intcode;
 pub(crate) mod module;
 pub(crate) mod parsers;
 
+pub(crate) mod mat2;
+pub(crate) mod vec2;
+pub(crate) mod vec3;
+
 macro_rules! gen_main {
     ($($mod_name:ident)*) => {
         $(
@@ -34,6 +38,7 @@ macro_rules! gen_main {
 gen_main!(
     day01
     day02
+    day03
 );
 
 fn get_exclusive_module() -> Option<String> {
