@@ -22,7 +22,7 @@ fn digit_iter(nr: u32) -> DigitIter {
 fn increasing_6_digits(range: RangeInclusive<u32>) -> impl Iterator<Item = u32> {
     range.filter(|&nr| {
         // 6 digit
-        if nr > 1_000_000 || nr < 100_000 {
+        if nr >= 1_000_000 || nr < 100_000 {
             return false;
         }
         // increasing
