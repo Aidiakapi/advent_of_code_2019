@@ -4,7 +4,7 @@ pub use nom::{
     combinator::{map, map_res, opt},
     error::ErrorKind,
     multi::{many1, separated_list},
-    sequence::pair,
+    sequence::{pair, tuple},
     Err, IResult,
 };
 

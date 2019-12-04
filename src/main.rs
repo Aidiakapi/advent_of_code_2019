@@ -41,6 +41,7 @@ gen_main!(
     day01
     day02
     day03
+    day04
 );
 
 fn get_exclusive_module() -> Option<String> {
