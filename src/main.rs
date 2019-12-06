@@ -12,9 +12,10 @@ pub(crate) mod vec2;
 pub(crate) mod vec3;
 
 generate_main!(
-    day01
-    day02
-    day03
-    day04
-    day05
+    // day01
+    // day02
+    // day03
+    // day04
+    // day05
+    day06
 );

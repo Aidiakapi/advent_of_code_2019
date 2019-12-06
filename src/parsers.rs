@@ -1,10 +1,10 @@
 #![allow(unused_imports)]
 pub use nom::{
-    character::complete::{char, digit1, line_ending, one_of},
+    character::complete::{alphanumeric1, char, digit1, line_ending, one_of},
     combinator::{map, map_res, opt},
     error::ErrorKind,
     multi::{many1, separated_list},
-    sequence::{pair, tuple},
+    sequence::{pair, terminated, tuple},
     Err, IResult,
 };
 
