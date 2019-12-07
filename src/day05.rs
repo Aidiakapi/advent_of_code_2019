@@ -5,12 +5,12 @@ use crate::intcode::{
     run_intcode, Error, Instruction, Memory, ModeIter, Result as icResult, Value,
 };
 
-struct Input<'io>(&'io mut Vec<Value>);
-struct Output<'io>(&'io mut Vec<Value>);
-struct JumpIfTrue;
-struct JumpIfFalse;
-struct LessThan;
-struct Equals;
+pub struct Input<'io>(pub &'io mut Vec<Value>);
+pub struct Output<'io>(pub &'io mut Vec<Value>);
+pub struct JumpIfTrue;
+pub struct JumpIfFalse;
+pub struct LessThan;
+pub struct Equals;
 
 impl Instruction for Input<'_> {
     const OPCODE: Value = 3;
@@ -111,7 +111,7 @@ fn pt1(mut memory: Vec<Value>) -> Result<Value> {
 
     run_intcode(
         &mut memory,
-        0,
+        &mut 0,
         (
             day02::Add {},
             day02::Mul {},
@@ -136,7 +136,7 @@ fn pt2(mut memory: Vec<Value>) -> Result<Value> {
 
     run_intcode(
         &mut memory,
-        0,
+        &mut 0,
         (
             day02::Add {},
             day02::Mul {},

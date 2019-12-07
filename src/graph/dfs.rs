@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 #[inline(always)]
 pub fn dfs<N, FN, NI>(start: N, mut next: FN)
 where

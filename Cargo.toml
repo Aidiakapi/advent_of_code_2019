@@ -10,6 +10,7 @@ edition = "2018"
 ahash = {version = "0.2", features = ["std", "compile-time-rng"]}
 arrayvec = "0.5"
 colored = "1.9"
+itertools = "0.8"
 nom = "5.0"
 num = "0.2"
 thiserror = "1.0"

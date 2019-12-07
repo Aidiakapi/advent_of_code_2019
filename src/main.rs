@@ -12,7 +12,9 @@ pub(crate) mod parsers;
 pub(crate) mod vec2;
 pub(crate) mod vec3;
 
+#[allow(dead_code)]
 type HashMap<K, V> = ahash::AHashMap<K, V>;
+#[allow(dead_code)]
 type HashSet<T> = ahash::AHashSet<T>;
 
 generate_main!(
@@ -22,4 +24,5 @@ generate_main!(
     day04
     day05
     day06
+    day07
 );

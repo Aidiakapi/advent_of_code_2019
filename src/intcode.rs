@@ -44,11 +44,11 @@ impl Iterator for ModeIter {
 
 pub fn run_intcode<I: InstructionSet, M: Memory>(
     m: &mut M,
-    mut ip: Value,
+    ip: &mut Value,
     mut instruction_set: I,
-) -> Result<Value> {
-    while instruction_set.execute(m, &mut ip)? {}
-    Ok(ip)
+) -> Result<()> {
+    while instruction_set.execute(m, ip)? {}
+    Ok(())
 }
 
 pub trait InstructionSet {

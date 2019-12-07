@@ -50,7 +50,7 @@ type Instructions = (Add, Mul, Halt);
 fn pt1(mut memory: Vec<i64>) -> Result<i64> {
     memory[1] = 12;
     memory[2] = 2;
-    run_intcode(&mut memory, 0, Instructions::default())?;
+    run_intcode(&mut memory, &mut 0, Instructions::default())?;
     Ok(memory[0])
 }
 
@@ -60,7 +60,7 @@ fn pt2(mut memory: Vec<i64>) -> Result<i64> {
         for verb in 0..=99 {
             memory[2] = verb;
             let mut memory = memory.clone();
-            run_intcode(&mut memory, 0, Instructions::default())?;
+            run_intcode(&mut memory, &mut 0, Instructions::default())?;
             if memory[0] == 19690720 {
                 return Ok(noun * 100 + verb);
             }
@@ -77,19 +77,19 @@ fn parse(s: &str) -> IResult<&str, Vec<i64>> {
 #[test]
 fn day02() -> Result<()> {
     let mut memory = vec![1, 0, 0, 0, 99];
-    run_intcode(&mut memory, 0, Instructions::default())?;
+    run_intcode(&mut memory, &mut 0, Instructions::default())?;
     assert_eq!(memory, vec![2, 0, 0, 0, 99]);
 
     memory = vec![2, 3, 0, 3, 99];
-    run_intcode(&mut memory, 0, Instructions::default())?;
+    run_intcode(&mut memory, &mut 0, Instructions::default())?;
     assert_eq!(memory, vec![2, 3, 0, 6, 99]);
 
     memory = vec![2, 4, 4, 5, 99, 0];
-    run_intcode(&mut memory, 0, Instructions::default())?;
+    run_intcode(&mut memory, &mut 0, Instructions::default())?;
     assert_eq!(memory, vec![2, 4, 4, 5, 99, 9801]);
 
     memory = vec![1, 1, 1, 4, 99, 5, 6, 0, 99];
-    run_intcode(&mut memory, 0, Instructions::default())?;
+    run_intcode(&mut memory, &mut 0, Instructions::default())?;
     assert_eq!(memory, vec![30, 1, 1, 4, 2, 5, 6, 0, 99]);
 
     Ok(())
