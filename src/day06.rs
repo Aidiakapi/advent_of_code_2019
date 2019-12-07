@@ -1,6 +1,8 @@
 module!(pt1: parse, pt2: parse);
 
-use std::collections::{hash_map::Entry, HashMap};
+use crate::graph::dfs;
+use crate::HashMap;
+use std::collections::hash_map::Entry;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Orbit<'s> {
@@ -13,6 +15,25 @@ struct Body<'s> {
     name: &'s str,
     parent: Option<&'s str>,
     children: Vec<&'s str>,
+}
+
+struct ParentIter<'h, 's: 'h>(&'h HashMap<&'s str, Body<'s>>, Option<&'s str>);
+impl<'h, 's: 'h> Iterator for ParentIter<'h, 's> {
+    type Item = &'h Body<'s>;
+    fn next(&mut self) -> Option<&'h Body<'s>> {
+        if let Some(body) = self.0.get(&self.1?) {
+            self.1 = body.parent;
+            Some(body)
+        } else {
+            None
+        }
+    }
+}
+fn parent_iter<'h, 's: 'h>(
+    map: &'h HashMap<&'s str, Body<'s>>,
+    start: &'s str,
+) -> ParentIter<'h, 's> {
+    ParentIter(map, Some(start))
 }
 
 fn create_bodies<'s>(orbits: &Vec<Orbit<'s>>) -> Result<HashMap<&'s str, Body<'s>>> {
@@ -43,7 +64,7 @@ fn create_bodies<'s>(orbits: &Vec<Orbit<'s>>) -> Result<HashMap<&'s str, Body<'s
             }
             Entry::Vacant(slot) => {
                 slot.insert(Body {
-                    name: orbit.target,
+                    name: orbit.object,
                     parent: Some(orbit.target),
                     children: Vec::new(),
                 });
@@ -56,75 +77,30 @@ fn create_bodies<'s>(orbits: &Vec<Orbit<'s>>) -> Result<HashMap<&'s str, Body<'s
 fn pt1(orbits: Vec<Orbit>) -> Result<usize> {
     let bodies = create_bodies(&orbits)?;
     let mut total = 0;
-    fn dfs<'s>(
-        bodies: &HashMap<&'s str, Body<'s>>,
-        total: &mut usize,
-        current_depth: usize,
-        current_body: &'s str,
-    ) {
-        if let Some(body) = bodies.get(current_body) {
-            *total += current_depth;
-            for &child in &body.children {
-                dfs(bodies, total, current_depth + 1, child);
-            }
-        }
-    }
-    dfs(&bodies, &mut total, 0, "COM");
+    dfs(("COM", 0), |(name, current_depth)| {
+        total += current_depth;
+        let body = &bodies[name];
+        body.children
+            .iter()
+            .map(move |&child| (child, current_depth + 1))
+    });
     Ok(total)
 }
 
 fn pt2(orbits: Vec<Orbit>) -> Result<usize> {
     let bodies = create_bodies(&orbits)?;
-    fn dfs<'s>(
-        bodies: &HashMap<&'s str, Body<'s>>,
-        current_depth: usize,
-        current_body: &'s str,
-        has_santa: &mut Option<usize>,
-        has_you: &mut Option<usize>,
-        result: &mut Option<usize>,
-    ) {
-        if let Some(body) = bodies.get(current_body) {
-            if current_body == "YOU" {
-                *has_you = Some(current_depth);
-            }
-            if current_body == "SAN" {
-                *has_santa = Some(current_depth);
-            }
-            let mut current_has_santa = None;
-            let mut current_has_you = None;
+    let visited = parent_iter(&bodies, "YOU")
+        .enumerate()
+        .map(|(dist, body)| (body.name, dist))
+        .collect::<HashMap<_, _>>();
 
-            for &child in &body.children {
-                dfs(
-                    bodies,
-                    current_depth + 1,
-                    child,
-                    &mut current_has_santa,
-                    &mut current_has_you,
-                    result,
-                );
-            }
-
-            if result.is_some() {
-                return;
-            }
-            if let Some(current_has_santa) = current_has_santa {
-                *has_santa = Some(current_has_santa);
-            }
-            if let Some(current_has_you) = current_has_you {
-                *has_you = Some(current_has_you);
-            }
-
-            match (*has_santa, *has_you) {
-                (Some(santa), Some(you)) => {
-                    *result = Some(santa + you - current_depth * 2);
-                }
-                _ => {}
-            }
-        }
-    }
-    let mut result = None;
-    dfs(&bodies, 0, "COM", &mut None, &mut None, &mut result);
-    result.ok_or(AoCError::NoSolution)
+    parent_iter(&bodies, "SAN")
+        .enumerate()
+        .filter_map(|(dist2, body)| visited.get(&body.name).map(|dist1| dist1 + dist2))
+        .next()
+        // The distance should not include YOU and SAN themselves
+        .map(|x| x - 2)
+        .ok_or(AoCError::NoSolution)
 }
 
 fn parse(s: &str) -> IResult<&str, Vec<Orbit>> {

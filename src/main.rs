@@ -1,8 +1,9 @@
-#![feature(optin_builtin_traits, test)]
+#![feature(optin_builtin_traits, test, trait_alias)]
 
 extern crate test;
 
 pub(crate) mod error;
+pub(crate) mod graph;
 pub(crate) mod intcode;
 pub(crate) mod mat2;
 #[macro_use]
@@ -11,11 +12,14 @@ pub(crate) mod parsers;
 pub(crate) mod vec2;
 pub(crate) mod vec3;
 
+type HashMap<K, V> = ahash::AHashMap<K, V>;
+type HashSet<T> = ahash::AHashSet<T>;
+
 generate_main!(
-    // day01
-    // day02
-    // day03
-    // day04
-    // day05
+    day01
+    day02
+    day03
+    day04
+    day05
     day06
 );

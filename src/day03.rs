@@ -1,6 +1,6 @@
 module!(pt1: parse, pt2: parse);
 
-use hashbrown::{HashMap, HashSet};
+use crate::{HashMap, HashSet};
 use num::traits::Zero;
 use std::iter::FromIterator;
 
@@ -136,5 +136,27 @@ mod test {
         let input = std::fs::read_to_string("./data/day03.txt").unwrap();
         let input = input.trim();
         b.iter(|| pt2(parse(black_box(input)).unwrap().1));
+    }
+
+    #[test]
+    fn day03() -> Result<()> {
+        let wires = parse(
+            "\
+R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51
+U98,R91,D20,R16,D67,R40,U7,R15,U6,R7",
+        )?
+        .1;
+
+        let wire1_positions: HashSet<Vec2> = HashSet::from_iter(iter_wire(wires.0.clone()));
+        let dups = iter_wire(wires.0)
+            .filter(|pos| wire1_positions.contains(pos))
+            .count()
+            - wire1_positions.len();
+        println!("dups: {}", dups);
+        for intersection in iter_wire(wires.1).filter(|pos| wire1_positions.contains(pos)) {
+            println!("{}, {}", intersection.x, intersection.y);
+        }
+
+        Ok(())
     }
 }
