@@ -147,7 +147,7 @@ pub fn execute_module_callback(closure: &mut Closure, msg: Message<'static>) {
             assert_eq!(Some(part), *closure.last_part);
             match result {
                 Ok(s) => {
-                    let s = s.trim();
+                    let s = s.trim_matches(|c| c == '\n' || c == '\r');
                     if s.contains('\n') || s.contains('\r') {
                         println!("\n{}", s.bright_white());
                     } else {
