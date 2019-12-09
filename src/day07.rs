@@ -1,138 +1,88 @@
 module!(pt1: parse, pt2: parse);
-use crate::day05::instruction_set;
-use crate::intcode::{self, run_intcode};
+use crate::intcode::{
+    util::{read_from_iter, write_single_value},
+    IoOperation, VM,
+};
 use itertools::Itertools;
+use std::collections::VecDeque;
 
 fn pt1(memory: Vec<i64>) -> Result<String> {
-    let mut inputs = Vec::new();
-    let mut outputs = Vec::new();
     let mut max = std::i64::MIN;
-    let mut max_permutation = 0;
-    for permutation in [0, 1, 2, 3, 4].iter().cloned().permutations(5) {
-        debug_assert!(inputs.is_empty());
-        debug_assert!(outputs.is_empty());
-        outputs.push(0);
-
-        for &phase in &permutation {
-            debug_assert!(inputs.is_empty());
-            inputs.push(
-                outputs
-                    .pop()
-                    .ok_or(AoCError::Logic("intcode program didn't produce an output"))?,
-            );
-            inputs.push(phase);
-            debug_assert!(outputs.is_empty());
-
-            let mut memory = memory.clone();
-            run_intcode(
-                &mut memory,
-                &mut 0,
-                instruction_set(&mut inputs, &mut outputs),
+    let mut max_phases = Vec::new();
+    for phases in (0..=4).permutations(5) {
+        let mut last_output = 0;
+        for &phase in &phases {
+            let mut output = None;
+            let mut vm = VM::new(memory.clone());
+            vm.run_all(
+                read_from_iter([phase, last_output].iter().cloned()),
+                write_single_value(&mut output),
             )?;
+            last_output =
+                output.ok_or(AoCError::Logic("intcode program did not produce an output"))?;
         }
 
-        let output = outputs
-            .pop()
-            .ok_or(AoCError::Logic("intcode program didn't produce an output"))?;
-
-        if output >= max {
-            max = output;
-            max_permutation = permutation[0] * 10000
-                + permutation[1] * 1000
-                + permutation[2] * 100
-                + permutation[3] * 10
-                + permutation[4];
+        if last_output > max {
+            max = last_output;
+            max_phases = phases;
         }
     }
-    Ok(format!("{} (from {:0>5})", max, max_permutation))
+    Ok(format!(
+        "{} (from {})",
+        max,
+        max_phases.into_iter().join(",")
+    ))
 }
 
 fn pt2(memory: Vec<i64>) -> Result<String> {
     let mut max = std::i64::MIN;
-    let mut max_permutation = 0;
+    let mut max_phases = Vec::new();
 
-    for permutation in [5, 6, 7, 8, 9].iter().cloned().permutations(5) {
-        let output = compute_output_pt2(&memory, &permutation)?;
+    for phases in (5..=9).permutations(5) {
+        let output = compute_output_pt2(&memory, &phases)?;
         if output > max {
             max = output;
-            max_permutation = permutation[0] * 10000
-                + permutation[1] * 1000
-                + permutation[2] * 100
-                + permutation[3] * 10
-                + permutation[4];
+            max_phases = phases;
         }
     }
-    Ok(format!("{} (from {:0>5})", max, max_permutation))
+    Ok(format!(
+        "{} (from {})",
+        max,
+        max_phases.into_iter().join(",")
+    ))
 }
 
-fn compute_output_pt2(memory: &Vec<i64>, permutation: &[i64]) -> Result<i64> {
-    #[derive(Debug, Clone)]
-    struct Amplifier {
-        ip: i64,
-        memory: Vec<i64>,
-        inputs: Vec<i64>,
-        outputs: Vec<i64>,
-    }
-    let mut amplifiers = vec![
-        Amplifier {
-            ip: 0,
-            memory: memory.clone(),
-            inputs: Vec::new(),
-            outputs: Vec::new(),
-        };
-        5
-    ];
+fn compute_output_pt2(memory: &Vec<i64>, phases: &[i64]) -> Result<i64> {
+    let mut inputs = vec![VecDeque::new(); 5];
+    let mut amplifiers = vec![VM::new(memory.clone()); 5];
 
-    fn pass_input(amplifier: &mut Amplifier, value: i64) {
-        amplifier.inputs.insert(0, value);
+    for (i, &phase) in phases.iter().enumerate() {
+        inputs[i].push_back(phase);
     }
-
-    for (idx, &phase) in permutation.iter().enumerate() {
-        pass_input(&mut amplifiers[idx], phase);
-    }
-
-    pass_input(&mut amplifiers[0], 0);
+    inputs[0].push_back(0);
 
     loop {
-        let mut had_progress = false;
-        for idx in 0..5 {
-            let amplifier = &mut amplifiers[idx];
-            match run_intcode(
-                &mut amplifier.memory,
-                &mut amplifier.ip,
-                instruction_set(&mut amplifier.inputs, &mut amplifier.outputs),
-            ) {
-                Ok(_) => {}
-                Err(intcode::Error::NoInputAvailable) => {}
-                x => x?,
-            };
-
-            if amplifier.outputs.is_empty() {
-                continue;
-            }
-            had_progress = true;
-            let next_idx = (idx + 1) % 5;
-            for out_idx in 0..amplifier.outputs.len() {
-                let value = amplifiers[idx].outputs[out_idx];
-                pass_input(&mut amplifiers[next_idx], value);
-            }
-            amplifiers[idx].outputs.clear();
+        let mut still_running = false;
+        for (idx, amplifier) in amplifiers.iter_mut().enumerate() {
+            still_running |= !amplifier.run_all_async(|io_op| {
+                match io_op {
+                    IoOperation::Read(out) => *out = inputs[idx].pop_front(),
+                    IoOperation::Write(value) => inputs[(idx + 1) % 5].push_back(value),
+                }
+                Ok(())
+            })?;
         }
-
-        if !had_progress {
-            if amplifiers[0].inputs.len() != 1
-                || amplifiers
-                    .iter()
-                    .skip(1)
-                    .any(|amplifier| amplifier.inputs.len() != 0)
-            {
-                break Err(AoCError::Logic(
-                    "incorrect passing of arguments between amplifiers",
-                ));
-            }
-            break Ok(amplifiers[0].inputs[0]);
+        if !still_running {
+            break;
         }
     }
+
+    if inputs[0].len() != 1 || inputs[1..].iter().any(|v| v.len() != 0) {
+        return Err(AoCError::Logic(
+            "intcode program did not properly halt with only one output remaining",
+        ));
+    }
+    Ok(inputs[0][0])
 }
 
 fn parse(s: &str) -> IResult<&str, Vec<i64>> {
@@ -146,21 +96,21 @@ fn day07() -> Result<()> {
         pt1(vec![
             3, 15, 3, 16, 1002, 16, 10, 16, 1, 16, 15, 15, 4, 15, 99, 0, 0
         ])?,
-        "43210 (from 43210)"
+        "43210 (from 4,3,2,1,0)"
     );
     assert_eq!(
         pt1(vec![
             3, 23, 3, 24, 1002, 24, 10, 24, 1002, 23, -1, 23, 101, 5, 23, 23, 1, 24, 23, 23, 4, 23,
             99, 0, 0
         ])?,
-        "54321 (from 01234)"
+        "54321 (from 0,1,2,3,4)"
     );
     assert_eq!(
         pt1(vec![
             3, 31, 3, 32, 1002, 32, 10, 32, 1001, 31, -2, 31, 1007, 31, 0, 33, 1002, 33, 7, 33, 1,
             33, 31, 31, 1, 32, 31, 31, 4, 31, 99, 0, 0, 0
         ])?,
-        "65210 (from 10432)"
+        "65210 (from 1,0,4,3,2)"
     );
 
     assert_eq!(
@@ -168,7 +118,7 @@ fn day07() -> Result<()> {
             3, 26, 1001, 26, -4, 26, 3, 27, 1002, 27, 2, 27, 1, 27, 26, 27, 4, 27, 1001, 28, -1,
             28, 1005, 28, 6, 99, 0, 0, 5
         ])?,
-        "139629729 (from 98765)"
+        "139629729 (from 9,8,7,6,5)"
     );
     assert_eq!(
         pt2(vec![
@@ -176,7 +126,7 @@ fn day07() -> Result<()> {
             -5, 54, 1105, 1, 12, 1, 53, 54, 53, 1008, 54, 0, 55, 1001, 55, 1, 55, 2, 53, 55, 53, 4,
             53, 1001, 56, -1, 56, 1005, 56, 6, 99, 0, 0, 0, 0, 10
         ])?,
-        "18216 (from 97856)"
+        "18216 (from 9,7,8,5,6)"
     );
     Ok(())
 }

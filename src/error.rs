@@ -2,7 +2,7 @@ use std::fmt::Debug;
 use thiserror::Error;
 
 #[allow(dead_code)]
-#[derive(Error, Debug)]
+#[derive(Clone, Error, Debug)]
 pub enum AoCError {
     #[error("parse int error")]
     ParseInt(#[from] std::num::ParseIntError),
