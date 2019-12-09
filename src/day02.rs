@@ -18,7 +18,7 @@ impl Instruction for Add {
     ) -> icResult<bool> {
         let a = m.read(*ip + 1, modes.next().unwrap()?)?;
         let b = m.read(*ip + 2, modes.next().unwrap()?)?;
-        m.write(*ip + 3, a + b)?;
+        m.write(*ip + 3, modes.next().unwrap()?, a + b)?;
         *ip += 4;
         Ok(true)
     }
@@ -33,7 +33,7 @@ impl Instruction for Mul {
     ) -> icResult<bool> {
         let a = m.read(*ip + 1, modes.next().unwrap()?)?;
         let b = m.read(*ip + 2, modes.next().unwrap()?)?;
-        m.write(*ip + 3, a * b)?;
+        m.write(*ip + 3, modes.next().unwrap()?, a * b)?;
         *ip += 4;
         Ok(true)
     }

@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use crate::HashMap;
 use num::ToPrimitive;
 use std::ops::Range;
 use thiserror::Error;
@@ -19,12 +20,15 @@ pub enum Error {
     RangeOutOfRange(Range<Value>),
     #[error("no input available")]
     NoInputAvailable,
+    #[error("mode not supported ({0:?})")]
+    ModeNotSupported(Mode),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Position,
     Immediate,
+    Relative,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,6 +41,7 @@ impl Iterator for ModeIter {
         Some(match mode {
             0 => Ok(Mode::Position),
             1 => Ok(Mode::Immediate),
+            2 => Ok(Mode::Relative),
             x => Err(Error::InvalidParameterMode(x)),
         })
     }
@@ -87,10 +92,14 @@ instruction_set_for_tuple!(0: A, 1: B, 2: C);
 // instruction_set_for_tuple!(0:A, 1:B, 2:C, 3:D);
 instruction_set_for_tuple!(0: A, 1: B, 2: C, 3: D, 4: E);
 instruction_set_for_tuple!(0: A, 1: B, 2: C, 3: D, 4: E, 5: F, 6: G, 7: H, 8: I);
+instruction_set_for_tuple!(0: A, 1: B, 2: C, 3: D, 4: E, 5: F, 6: G, 7: H, 8: I, 9: J);
 
 pub trait Memory {
     fn read(&self, idx: Value, mode: Mode) -> Result<Value>;
-    fn write(&mut self, idx: Value, value: Value) -> Result<()>;
+    fn write(&mut self, idx: Value, mode: Mode, value: Value) -> Result<()>;
+
+    fn get_relative_base(&self) -> Result<Value>;
+    fn set_relative_base(&mut self, value: Value) -> Result<()>;
 }
 
 fn as_usize(vec: &Vec<Value>, idx: Value) -> Result<usize> {
@@ -106,12 +115,99 @@ impl Memory for Vec<Value> {
         match mode {
             Mode::Immediate => Ok(value),
             Mode::Position => self.read(value, Mode::Immediate),
+            Mode::Relative => Err(Error::ModeNotSupported(Mode::Relative)),
         }
     }
-    fn write(&mut self, idx: Value, value: Value) -> Result<()> {
+    fn write(&mut self, idx: Value, mode: Mode, value: Value) -> Result<()> {
+        if mode != Mode::Position {
+            return Err(Error::ModeNotSupported(mode));
+        }
         let position = self[as_usize(self, idx)?];
         let position = as_usize(self, position)?;
         self[position] = value;
+        Ok(())
+    }
+
+    fn get_relative_base(&self) -> Result<Value> {
+        Err(Error::ModeNotSupported(Mode::Relative))
+    }
+    fn set_relative_base(&mut self, _value: Value) -> Result<()> {
+        Err(Error::ModeNotSupported(Mode::Relative))
+    }
+}
+
+impl Memory for (Vec<Value>, Value) {
+    fn read(&self, idx: Value, mode: Mode) -> Result<Value> {
+        let value = self.0[as_usize(&self.0, idx)?];
+        match mode {
+            Mode::Immediate => Ok(value),
+            Mode::Position => self.read(value, Mode::Immediate),
+            Mode::Relative => self.read(value + self.1, Mode::Immediate),
+        }
+    }
+    fn write(&mut self, idx: Value, mode: Mode, value: Value) -> Result<()> {
+        match mode {
+            Mode::Immediate => Err(Error::ModeNotSupported(mode)),
+            Mode::Position => {
+                let position = self.0[as_usize(&self.0, idx)?];
+                let position = as_usize(&self.0, position)?;
+                self.0[position] = value;
+                Ok(())
+            }
+            Mode::Relative => {
+                let position = self.0[as_usize(&self.0, idx)?];
+                let position = as_usize(&self.0, position + self.1)?;
+                self.0[position] = value;
+                Ok(())
+            }
+        }
+    }
+
+    fn get_relative_base(&self) -> Result<Value> {
+        Ok(self.1)
+    }
+    fn set_relative_base(&mut self, value: Value) -> Result<()> {
+        self.1 = value;
+        Ok(())
+    }
+}
+
+impl Memory for (HashMap<Value, Value>, Value) {
+    fn read(&self, idx: Value, mode: Mode) -> Result<Value> {
+        if idx < 0 {
+            return Err(Error::IndexOutOfRange(idx));
+        }
+        let value = self.0.get(&idx).cloned().unwrap_or(0);
+        match mode {
+            Mode::Immediate => Ok(value),
+            Mode::Position => self.read(value, Mode::Immediate),
+            Mode::Relative => self.read(value + self.1, Mode::Immediate),
+        }
+    }
+    
+    fn write(&mut self, idx: Value, mode: Mode, value: Value) -> Result<()> {
+        if idx < 0 {
+            return Err(Error::IndexOutOfRange(idx));
+        }
+        let idx = self.0.get(&idx).cloned().unwrap_or(0);
+        let idx = match mode {
+            Mode::Immediate => return Err(Error::ModeNotSupported(mode)),
+            Mode::Position => idx,
+            Mode::Relative => idx + self.1,
+        };
+        if value == 0 {
+            self.0.remove(&idx);
+        } else {
+            self.0.insert(idx, value);
+        }
+        Ok(())
+    }
+    
+    fn get_relative_base(&self) -> Result<Value> {
+        Ok(self.1)
+    }
+    fn set_relative_base(&mut self, value: Value) -> Result<()> {
+        self.1 = value;
         Ok(())
     }
 }

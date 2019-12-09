@@ -1,6 +1,5 @@
 module!(pt1: parse, pt2: parse);
-use crate::day02::{Add, Halt, Mul};
-use crate::day05::{Equals, Input, JumpIfFalse, JumpIfTrue, LessThan, Output};
+use crate::day05::instruction_set;
 use crate::intcode::{self, run_intcode};
 use itertools::Itertools;
 
@@ -28,17 +27,7 @@ fn pt1(memory: Vec<i64>) -> Result<String> {
             run_intcode(
                 &mut memory,
                 &mut 0,
-                (
-                    Add {},
-                    Mul {},
-                    Halt {},
-                    Input(&mut inputs),
-                    Output(&mut outputs),
-                    JumpIfTrue {},
-                    JumpIfFalse {},
-                    LessThan {},
-                    Equals {},
-                ),
+                instruction_set(&mut inputs, &mut outputs),
             )?;
         }
 
@@ -111,27 +100,16 @@ fn compute_output_pt2(memory: &Vec<i64>, permutation: &[i64]) -> Result<i64> {
             match run_intcode(
                 &mut amplifier.memory,
                 &mut amplifier.ip,
-                (
-                    Add {},
-                    Mul {},
-                    Halt {},
-                    Input(&mut amplifier.inputs),
-                    Output(&mut amplifier.outputs),
-                    JumpIfTrue {},
-                    JumpIfFalse {},
-                    LessThan {},
-                    Equals {},
-                ),
+                instruction_set(&mut amplifier.inputs, &mut amplifier.outputs),
             ) {
-                Ok(_) => {},
-                Err(intcode::Error::NoInputAvailable) => {},
+                Ok(_) => {}
+                Err(intcode::Error::NoInputAvailable) => {}
                 x => x?,
             };
 
             if amplifier.outputs.is_empty() {
                 continue;
             }
-            
             had_progress = true;
             let next_idx = (idx + 1) % 5;
             for out_idx in 0..amplifier.outputs.len() {
@@ -142,8 +120,15 @@ fn compute_output_pt2(memory: &Vec<i64>, permutation: &[i64]) -> Result<i64> {
         }
 
         if !had_progress {
-            if amplifiers[0].inputs.len() != 1 || amplifiers.iter().skip(1).any(|amplifier| amplifier.inputs.len() != 0) {
-                break Err(AoCError::Logic("incorrect passing of arguments between amplifiers"));
+            if amplifiers[0].inputs.len() != 1
+                || amplifiers
+                    .iter()
+                    .skip(1)
+                    .any(|amplifier| amplifier.inputs.len() != 0)
+            {
+                break Err(AoCError::Logic(
+                    "incorrect passing of arguments between amplifiers",
+                ));
             }
             break Ok(amplifiers[0].inputs[0]);
         }

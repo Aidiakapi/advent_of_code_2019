@@ -2,21 +2,32 @@ module!(pt1: parse, pt2: parse);
 
 use crate::day02;
 use crate::intcode::{
-    run_intcode, Error, Instruction, Memory, ModeIter, Result as icResult, Value,
+    run_intcode, Error, Instruction, InstructionSet, Memory, ModeIter, Result as icResult, Value,
 };
 
+#[derive(Debug)]
 pub struct Input<'io>(pub &'io mut Vec<Value>);
+#[derive(Debug)]
 pub struct Output<'io>(pub &'io mut Vec<Value>);
+#[derive(Debug, Clone, Copy, Default)]
 pub struct JumpIfTrue;
+#[derive(Debug, Clone, Copy, Default)]
 pub struct JumpIfFalse;
+#[derive(Debug, Clone, Copy, Default)]
 pub struct LessThan;
+#[derive(Debug, Clone, Copy, Default)]
 pub struct Equals;
 
 impl Instruction for Input<'_> {
     const OPCODE: Value = 3;
-    fn execute<M: Memory>(&mut self, m: &mut M, ip: &mut Value, _: ModeIter) -> icResult<bool> {
+    fn execute<M: Memory>(
+        &mut self,
+        m: &mut M,
+        ip: &mut Value,
+        mut modes: ModeIter,
+    ) -> icResult<bool> {
         let value = self.0.pop().ok_or(Error::NoInputAvailable)?;
-        m.write(*ip + 1, value)?;
+        m.write(*ip + 1, modes.next().unwrap()?, value)?;
         *ip += 2;
         Ok(true)
     }
@@ -28,9 +39,9 @@ impl Instruction for Output<'_> {
         &mut self,
         m: &mut M,
         ip: &mut Value,
-        mut mode: ModeIter,
+        mut modes: ModeIter,
     ) -> icResult<bool> {
-        let value = m.read(*ip + 1, mode.next().unwrap()?)?;
+        let value = m.read(*ip + 1, modes.next().unwrap()?)?;
         self.0.push(value);
         *ip += 2;
         Ok(true)
@@ -83,7 +94,7 @@ impl Instruction for LessThan {
     ) -> icResult<bool> {
         let a = m.read(*ip + 1, modes.next().unwrap()?)?;
         let b = m.read(*ip + 2, modes.next().unwrap()?)?;
-        m.write(*ip + 3, if a < b { 1 } else { 0 })?;
+        m.write(*ip + 3, modes.next().unwrap()?, if a < b { 1 } else { 0 })?;
         *ip += 4;
         Ok(true)
     }
@@ -99,10 +110,27 @@ impl Instruction for Equals {
     ) -> icResult<bool> {
         let a = m.read(*ip + 1, modes.next().unwrap()?)?;
         let b = m.read(*ip + 2, modes.next().unwrap()?)?;
-        m.write(*ip + 3, if a == b { 1 } else { 0 })?;
+        m.write(*ip + 3, modes.next().unwrap()?, if a == b { 1 } else { 0 })?;
         *ip += 4;
         Ok(true)
     }
+}
+
+pub fn instruction_set<'io>(
+    inputs: &'io mut Vec<Value>,
+    outputs: &'io mut Vec<Value>,
+) -> impl InstructionSet + 'io {
+    (
+        day02::Add {},
+        day02::Mul {},
+        day02::Halt {},
+        Input(inputs),
+        Output(outputs),
+        JumpIfTrue {},
+        JumpIfFalse {},
+        LessThan {},
+        Equals {},
+    )
 }
 
 fn pt1(mut memory: Vec<Value>) -> Result<Value> {
@@ -137,17 +165,7 @@ fn pt2(mut memory: Vec<Value>) -> Result<Value> {
     run_intcode(
         &mut memory,
         &mut 0,
-        (
-            day02::Add {},
-            day02::Mul {},
-            day02::Halt {},
-            Input(&mut inputs),
-            Output(&mut outputs),
-            JumpIfTrue {},
-            JumpIfFalse {},
-            LessThan {},
-            Equals {},
-        ),
+        instruction_set(&mut inputs, &mut outputs),
     )?;
 
     if outputs.len() != 1 {
