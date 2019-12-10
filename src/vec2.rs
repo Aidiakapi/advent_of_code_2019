@@ -6,6 +6,7 @@ use num::traits::{
     Num,
 };
 use std::cmp::Ordering;
+use std::convert::TryFrom;
 use std::fmt;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
@@ -50,6 +51,17 @@ impl<T> Vec2<T> {
         F: FnMut(&T, &T) -> bool,
     {
         f(&self.x, &other.x) || f(&self.y, &other.y)
+    }
+
+    pub fn convert<U>(self) -> Result<Vec2<U>, <U as TryFrom<T>>::Error>
+    where
+        U: TryFrom<T>,
+        (T, U): NotEq,
+    {
+        Ok(Vec2 {
+            x: U::try_from(self.x)?,
+            y: U::try_from(self.y)?,
+        })
     }
 }
 
@@ -108,6 +120,30 @@ where
             x: T::from(value.x),
             y: T::from(value.y),
         }
+    }
+}
+
+impl<T, U> TryFrom<Vec2<U>> for Vec2<T>
+where
+    T: TryFrom<U>,
+    (T, U): NotEq,
+{
+    type Error = <T as TryFrom<U>>::Error;
+    fn try_from(value: Vec2<U>) -> Result<Vec2<T>, Self::Error> {
+        Ok(Vec2 {
+            x: T::try_from(value.x)?,
+            y: T::try_from(value.y)?,
+        })
+    }
+}
+
+impl<T> Vec2<T>
+where
+    T: Mul,
+    T::Output: Add,
+{
+    pub fn dot(self, other: Self) -> <T::Output as Add>::Output {
+        self.x * other.x + self.y * other.y
     }
 }
 

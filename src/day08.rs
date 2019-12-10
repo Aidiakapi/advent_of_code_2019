@@ -54,9 +54,12 @@ fn pt2((size, layers): (Vec2us, Vec<u8>)) -> Result<String> {
         }
     }
 
-    let mut res = String::with_capacity(size.x * size.y + size.y - 1);
+    let mut res = String::with_capacity((size.x + size.x / 5 - 1) * size.y + size.y - 1);
     for y in 0..size.y {
         for x in 0..size.x {
+            if x != 0 && x % 5 == 0 {
+                res.push(' ');
+            }
             match output[Vec2us::new(x, y)] {
                 0 => res.push(' '),
                 1 => res.push('█'),

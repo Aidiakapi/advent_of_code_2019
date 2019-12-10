@@ -55,3 +55,24 @@ fn day09() -> Result<()> {
 
     Ok(())
 }
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use ::test::{black_box, Bencher};
+
+    #[bench]
+    fn day09_pt1(b: &mut Bencher) {
+        let input = std::fs::read_to_string("./data/day09.txt").unwrap();
+        let input = input.trim();
+        b.iter(|| pt1(parse(black_box(input)).unwrap().1));
+    }
+
+    #[bench]
+    fn day09_pt2(b: &mut Bencher) {
+        let input = std::fs::read_to_string("./data/day09.txt").unwrap();
+        let input = input.trim();
+        b.iter(|| pt2(parse(black_box(input)).unwrap().1));
+    }
+}

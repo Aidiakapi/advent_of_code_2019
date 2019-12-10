@@ -261,10 +261,7 @@ impl<M: Memory> VM<M> {
     }
 
     pub fn run_all_no_io(&mut self) -> Result<()> {
-        self.run_all(
-            || Err(Error::ReadingNotSupported),
-            |_| Err(Error::WritingNotSupported),
-        )
+        self.run_all(util::reading_not_supported, util::writing_not_supported)
     }
 
     pub fn run_one(&mut self) -> Result<()> {
