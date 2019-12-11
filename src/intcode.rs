@@ -63,6 +63,8 @@ pub enum Error {
     ReadingNotSupported,
     #[error("writing is not supported")]
     WritingNotSupported,
+    #[error("{0}")]
+    Custom(String),
 }
 pub type Result<T> = ::std::result::Result<T, Error>;
 
