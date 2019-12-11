@@ -56,7 +56,6 @@ impl<T> Vec2<T> {
     pub fn convert<U>(self) -> Result<Vec2<U>, <U as TryFrom<T>>::Error>
     where
         U: TryFrom<T>,
-        (T, U): NotEq,
     {
         Ok(Vec2 {
             x: U::try_from(self.x)?,

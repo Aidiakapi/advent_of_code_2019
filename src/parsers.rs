@@ -1,17 +1,18 @@
-#![allow(unused_imports)]
+#![allow(dead_code)]
+#[allow(unused_imports)]
 pub use nom::{
+    branch::alt,
     bytes::complete::tag,
-    character::complete::{alphanumeric1, char, digit1, line_ending, one_of},
+    character::complete::{alphanumeric1, anychar, char, digit1, line_ending, one_of},
     combinator::{map, map_res, opt},
     error::ErrorKind,
-    multi::{many0, many1, separated_list},
+    multi::{fold_many1, many0, many1, separated_list},
     sequence::{delimited, pair, terminated, tuple},
     Err, IResult,
 };
 
 macro_rules! unsigned_nr_str_parser {
     ($fn_name: ident, $t:ident) => {
-        #[allow(dead_code)]
         pub fn $fn_name(s: &str) -> IResult<&str, $t> {
             map_res(digit1, |s: &str| {
                 s.parse::<$t>()
@@ -23,7 +24,6 @@ macro_rules! unsigned_nr_str_parser {
 
 macro_rules! signed_nr_str_parser {
     ($fn_name: ident, $t:ident) => {
-        #[allow(dead_code)]
         pub fn $fn_name(s: &str) -> IResult<&str, $t> {
             map_res(
                 pair(opt(one_of("+-")), digit1),
@@ -48,3 +48,27 @@ signed_nr_str_parser!(i8_str, i8);
 signed_nr_str_parser!(i16_str, i16);
 signed_nr_str_parser!(i32_str, i32);
 signed_nr_str_parser!(i64_str, i64);
+
+use nom::{
+    error::{make_error, ParseError},
+    Compare, InputIter, InputLength, Slice,
+};
+use std::ops::{Range, RangeFrom, RangeTo};
+pub fn line_ending_or_eof<T, E: ParseError<T>>(input: T) -> IResult<T, (), E>
+where
+    T: Clone,
+    T: Slice<Range<usize>> + Slice<RangeFrom<usize>> + Slice<RangeTo<usize>>,
+    T: InputIter + InputLength,
+    T: Compare<&'static str>,
+{
+    alt((map(line_ending, |_| ()), eof))(input)
+}
+
+/// Matches the end of the file
+pub fn eof<T: nom::InputLength, E: ParseError<T>>(input: T) -> IResult<T, (), E> {
+    if input.input_len() == 0 {
+        Ok((input, ()))
+    } else {
+        Err(nom::Err::Error(make_error(input, ErrorKind::Eof)))
+    }
+}

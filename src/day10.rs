@@ -1,131 +1,96 @@
 module!(pt1: parse, pt2: parse);
 
 use crate::mat2::Mat2;
-use crate::vec2::{Vec2i, Vec2us};
+use crate::vec2::Vec2us;
+use crate::HashSet;
 use num::integer::Integer;
+use std::convert::Into;
 
-fn visibility_from_point(position: Vec2i, asteroids: &[Vec2i], visibility_mask: &mut Mat2<bool>) {
-    // Reset visibility mask
-    for v in visibility_mask.data.iter_mut() {
-        *v = true;
-    }
+type Vec2 = crate::vec2::Vec2i;
 
-    for &goal_pos in asteroids {
-        if position == goal_pos {
-            continue;
+struct CloserToCenterIter {
+    pos: Vec2,
+    offset: Vec2,
+}
+impl Iterator for CloserToCenterIter {
+    type Item = Vec2;
+    fn next(&mut self) -> Option<Vec2> {
+        if self.pos == (0, 0).into() {
+            return None;
         }
-
-        let delta = goal_pos - position;
-        let offset = delta / delta.x.abs().gcd(&delta.y.abs());
-        // println!("from {:?} to {:?} => {:?}, {:?}", start_pos, goal_pos, delta, offset);
-
-        let mut current = delta;
-        loop {
-            current += offset;
-            let pos = match (position + current).convert::<usize>() {
-                Ok(pos) => pos,
-                Err(_) => break,
-            };
-            if pos.x >= visibility_mask.width() || pos.y >= visibility_mask.height() {
-                break;
-            }
-            visibility_mask[pos] = false;
-        }
+        let prev = self.pos;
+        self.pos -= self.offset;
+        Some(prev)
     }
 }
 
-fn create_asteroids(grid: &Mat2<bool>) -> Vec<Vec2i> {
+fn closer_to_center(pos: Vec2) -> CloserToCenterIter {
+    let offset = pos / pos.x.abs().gcd(&pos.y.abs()).max(1);
+    CloserToCenterIter {
+        pos: pos - offset,
+        offset,
+    }
+}
+
+fn asteroid_positions<'a>(grid: &'a Mat2<bool>) -> impl Iterator<Item = Vec2> + Clone + 'a {
     grid.iter()
-        .filter(|(_, value)| **value)
-        .map(|(pos, _)| pos.convert::<i32>().unwrap())
-        .collect()
+        .filter(|&(_, &is_asteroid)| is_asteroid)
+        .map(|(pos, _)| pos.convert().unwrap())
 }
 
-fn create_visibility_mat(grid: &Mat2<bool>) -> (Mat2<u32>, Vec<Vec2i>) {
-    let asteroids = create_asteroids(grid);
-    let mut output = Mat2::new(0, grid.size());
-    let mut visibility_mask = Mat2::new(true, grid.size());
-    for &start_pos in &asteroids {
-        visibility_from_point(start_pos, &asteroids, &mut visibility_mask);
-
-        // let mut vis = String::new();
-        // for y in 0..output.width() {
-        //     for x in 0..output.height() {
-        //         vis.push(if visibility_mask[x][y] { '#' } else { '.' });
-        //     }
-        //     vis.push('\n');
-        // }
-        // println!("at {:?}\n{}", start_pos, vis);
-        output[start_pos.convert::<usize>().unwrap()] = asteroids
-            .iter()
-            .filter(|&&goal_pos| {
-                start_pos != goal_pos && visibility_mask[goal_pos.convert::<usize>().unwrap()]
-            })
-            .count() as u32;
-    }
-
-    (output, asteroids)
-}
-
-fn pt1(grid: Mat2<bool>) -> u32 {
-    let (visibility_mat, asteroids) = create_visibility_mat(&grid);
+fn find_ideal_spot(asteroids: &HashSet<Vec2>) -> (Vec2, usize) {
     asteroids
         .iter()
-        .map(|&asteroid| visibility_mat[asteroid.convert::<usize>().unwrap()])
-        .max()
+        .map(|&asteroid1| {
+            (
+                asteroid1,
+                asteroids
+                    .iter()
+                    .filter(|&&asteroid2| {
+                        closer_to_center(asteroid2 - asteroid1)
+                            .all(|pos| !asteroids.contains(&(pos + asteroid1)))
+                    })
+                    .count()
+                    // subtract 1, because pos itself is also visible
+                    - 1,
+            )
+        })
+        .max_by_key(|(_, visible_count)| *visible_count)
         .unwrap()
 }
 
-fn calc_angle(offset: Vec2i) -> f32 {
-    let res = (offset.x as f32).atan2(-offset.y as f32);
-    if res < -0.00001f32 {
-        res + std::f32::consts::PI * 2f32
-    } else {
-        res
-    }
-}
+fn vaporization_order(mut asteroids: HashSet<Vec2>) -> (Vec2, Vec<Vec2>) {
+    let laser = find_ideal_spot(&asteroids).0;
+    asteroids.remove(&laser);
 
-fn create_vaporize_order(mut grid: Mat2<bool>) -> Vec<Vec2us> {
-    let mut vaporization_order = Vec::new();
-    let mut visibility_mask = Mat2::new(false, grid.size());
-
-    let (visibility_mat, mut asteroids) = create_visibility_mat(&grid);
-    let laser_pos = *asteroids
-        .iter()
-        .max_by_key(|&asteroid| visibility_mat[asteroid.convert::<usize>().unwrap()])
-        .unwrap();
-    loop {
-        visibility_from_point(laser_pos, &asteroids, &mut visibility_mask);
-        let mut vaporize_this_round = asteroids
-            .iter()
-            .cloned()
-            .filter(|&asteroid| {
-                asteroid != laser_pos && visibility_mask[asteroid.convert::<usize>().unwrap()]
-            })
-            .map(|asteroid| (asteroid, calc_angle(asteroid - laser_pos)))
-            .collect::<Vec<_>>();
-
-        vaporize_this_round.sort_unstable_by(|(_, a), (_, b)| a.partial_cmp(&b).unwrap());
-        vaporization_order.extend(
-            vaporize_this_round
-                .iter()
-                .map(|&(asteroid, _)| asteroid.convert::<usize>().unwrap()),
-        );
-        for &(asteroid, _) in &vaporize_this_round {
-            grid[asteroid.convert::<usize>().unwrap()] = false;
-        }
-        asteroids = create_asteroids(&grid);
-        if asteroids.len() == 1 {
-            break;
-        }
+    let mut vaporization_order: Vec<_> =
+        asteroids.iter().map(|&asteroid| asteroid - laser).collect();
+    vaporization_order.sort_unstable_by_key(|&asteroid| {
+        let closer_to_center_count = closer_to_center(asteroid)
+            .filter(|&pos| asteroids.contains(&(pos + laser)))
+            .count();
+        (
+            closer_to_center_count,
+            ORIENTATION_TABLE[(asteroid.y + 30) as usize][(asteroid.x + 30) as usize],
+        )
+    });
+    for asteroid in &mut vaporization_order {
+        *asteroid += laser;
     }
 
-    vaporization_order
+    (laser, vaporization_order)
 }
 
-fn pt2(grid: Mat2<bool>) -> usize {
-    let order = create_vaporize_order(grid);
-    order[199].x * 100 + order[199].y
+fn pt1(grid: Mat2<bool>) -> usize {
+    find_ideal_spot(&asteroid_positions(&grid).collect()).1
+}
+
+fn pt2(grid: Mat2<bool>) -> Result<i32> {
+    vaporization_order(asteroid_positions(&grid).collect())
+        .1
+        .get(199)
+        .map(|pos| pos.x * 100 + pos.y)
+        .ok_or(AoCError::NoSolution)
 }
 
 fn parse(s: &str) -> IResult<&str, Mat2<bool>> {
@@ -153,25 +118,10 @@ fn parse(s: &str) -> IResult<&str, Mat2<bool>> {
 
 #[test]
 fn day10() -> Result<()> {
-    let (vis_mat, _) = create_visibility_mat(
-        &parse(
-            "\
-.#..#
-.....
-#####
-....#
-...##",
-        )?
-        .1,
-    );
-    assert_eq!(
-        vis_mat.data.as_slice(),
-        &[0, 0, 6, 0, 0, 7, 0, 7, 0, 0, 0, 0, 7, 0, 0, 0, 0, 7, 0, 8, 7, 0, 5, 7, 7]
-    );
-
-    let vape_order = create_vaporize_order(
-        parse(
-            "\
+    let vape_order = vaporization_order(
+        asteroid_positions(
+            &parse(
+                "\
 .#..##.###...#######
 ##.############..##.
 .#.######.########.#
@@ -192,20 +142,25 @@ fn day10() -> Result<()> {
 .#.#.###########.###
 #.#.#.#####.####.###
 ###.##.####.##.#..##",
-        )?
-        .1,
-    );
-    assert_eq!(vape_order[0], Vec2us::new(11, 12));
-    assert_eq!(vape_order[1], Vec2us::new(12, 1));
-    assert_eq!(vape_order[2], Vec2us::new(12, 2));
-    assert_eq!(vape_order[9], Vec2us::new(12, 8));
-    assert_eq!(vape_order[19], Vec2us::new(16, 0));
-    assert_eq!(vape_order[49], Vec2us::new(16, 9));
-    assert_eq!(vape_order[99], Vec2us::new(10, 16));
-    assert_eq!(vape_order[198], Vec2us::new(9, 6));
-    assert_eq!(vape_order[199], Vec2us::new(8, 2));
-    assert_eq!(vape_order[200], Vec2us::new(10, 9));
-    assert_eq!(vape_order[298], Vec2us::new(11, 1));
+            )?
+            .1,
+        )
+        .collect(),
+    )
+    .1;
+    assert_eq!(vape_order[0], Vec2::new(11, 12));
+    assert_eq!(vape_order[1], Vec2::new(12, 1));
+    assert_eq!(vape_order[2], Vec2::new(12, 2));
+    assert_eq!(vape_order[9], Vec2::new(12, 8));
+    assert_eq!(vape_order[19], Vec2::new(16, 0));
+    assert_eq!(vape_order[49], Vec2::new(16, 9));
+    assert_eq!(vape_order[99], Vec2::new(10, 16));
+    assert_eq!(vape_order[198], Vec2::new(9, 6));
+    assert_eq!(vape_order[199], Vec2::new(8, 2));
+    assert_eq!(vape_order[200], Vec2::new(10, 9));
+    assert_eq!(vape_order[298], Vec2::new(11, 1));
 
     Ok(())
 }
+
+include!("day10_table.rs");
