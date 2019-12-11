@@ -1,6 +1,5 @@
-module!(pt1: parse, pt2: parse);
-
-use crate::intcode::{Memory, Value, VM};
+use crate::intcode::{util::parse_intcode, Memory, Value, VM};
+module!(pt1: parse_intcode, pt2: parse_intcode);
 
 fn pt1(mut memory: Vec<Value>) -> Result<Value> {
     memory[1] = 12;
@@ -23,11 +22,6 @@ fn pt2(mut memory: Vec<Value>) -> Result<Value> {
         }
     }
     Err(AoCError::NoSolution)
-}
-
-fn parse(s: &str) -> IResult<&str, Vec<i64>> {
-    use parsers::*;
-    separated_list(char(','), i64_str)(s)
 }
 
 #[test]

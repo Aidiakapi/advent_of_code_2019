@@ -1,10 +1,10 @@
-module!(pt1: parse, pt2: parse);
 use crate::intcode::{
-    util::{read_from_iter, write_single_value},
+    util::{parse_intcode, read_from_iter, write_single_value},
     IoOperation, VM,
 };
 use itertools::Itertools;
 use std::collections::VecDeque;
+module!(pt1: parse_intcode, pt2: parse_intcode);
 
 fn pt1(memory: Vec<i64>) -> Result<String> {
     let mut max = std::i64::MIN;
@@ -83,11 +83,6 @@ fn compute_output_pt2(memory: &Vec<i64>, phases: &[i64]) -> Result<i64> {
         ));
     }
     Ok(inputs[0][0])
-}
-
-fn parse(s: &str) -> IResult<&str, Vec<i64>> {
-    use parsers::*;
-    separated_list(char(','), i64_str)(s)
 }
 
 #[test]

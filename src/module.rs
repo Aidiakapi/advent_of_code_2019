@@ -9,6 +9,7 @@ macro_rules! module_part {
         );
     };
     ($input:expr, $result:expr, $part_name:ident) => {
+        use crate::module::ToModuleResult;
         *$result = Some($part_name($input).to_module_result());
     };
 }

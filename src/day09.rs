@@ -1,10 +1,10 @@
-module!(pt1: parse, pt2: parse);
 use crate::intcode::{
     sparse_memory,
-    util::{read_from_iter, write_single_value},
+    util::{parse_intcode, read_from_iter, write_single_value},
     Value, VM,
 };
 use std::iter::once;
+module!(pt1: parse_intcode, pt2: parse_intcode);
 
 fn run_program(memory: Vec<Value>, input: Value) -> Result<Value> {
     let mut vm = VM::new(sparse_memory(memory));
@@ -19,11 +19,6 @@ fn pt1(memory: Vec<Value>) -> Result<Value> {
 }
 fn pt2(memory: Vec<Value>) -> Result<Value> {
     run_program(memory, 2)
-}
-
-fn parse(s: &str) -> IResult<&str, Vec<Value>> {
-    use parsers::*;
-    separated_list(char(','), i64_str)(s)
 }
 
 #[test]
@@ -56,7 +51,6 @@ fn day09() -> Result<()> {
     Ok(())
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -66,13 +60,13 @@ mod test {
     fn day09_pt1(b: &mut Bencher) {
         let input = std::fs::read_to_string("./data/day09.txt").unwrap();
         let input = input.trim();
-        b.iter(|| pt1(parse(black_box(input)).unwrap().1));
+        b.iter(|| pt1(parse_intcode(black_box(input)).unwrap().1));
     }
 
     #[bench]
     fn day09_pt2(b: &mut Bencher) {
         let input = std::fs::read_to_string("./data/day09.txt").unwrap();
         let input = input.trim();
-        b.iter(|| pt2(parse(black_box(input)).unwrap().1));
+        b.iter(|| pt2(parse_intcode(black_box(input)).unwrap().1));
     }
 }

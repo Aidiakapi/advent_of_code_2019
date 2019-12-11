@@ -1,10 +1,9 @@
-module!(pt1: parse, pt2: parse);
-
 use crate::intcode::{
-    util::{reading_not_supported, write_single_value},
+    util::{parse_intcode, reading_not_supported, write_single_value},
     Error::WritingNotSupported,
     Value, VM,
 };
+module!(pt1: parse_intcode, pt2: parse_intcode);
 
 fn pt1(memory: Vec<Value>) -> Result<Value> {
     let mut vm = VM::new(memory);
@@ -31,9 +30,4 @@ fn pt2(memory: Vec<Value>) -> Result<Value> {
     let mut output = None;
     vm.run_all(reading_not_supported, write_single_value(&mut output))?;
     output.ok_or(AoCError::Logic("intcode program wrote no output"))
-}
-
-fn parse(s: &str) -> IResult<&str, Vec<Value>> {
-    use parsers::*;
-    separated_list(char(','), i64_str)(s)
 }

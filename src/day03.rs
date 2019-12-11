@@ -82,12 +82,13 @@ enum Direction {
 }
 
 impl Direction {
+    #[rustfmt::skip]
     pub fn modify_position(&self, pos: &mut Vec2, distance: i64) {
         match *self {
-            Direction::Left => pos.x -= distance,
-            Direction::Up => pos.y -= distance,
+            Direction::Left  => pos.x -= distance,
+            Direction::Up    => pos.y -= distance,
             Direction::Right => pos.x += distance,
-            Direction::Down => pos.y += distance,
+            Direction::Down  => pos.y += distance,
         }
     }
 }

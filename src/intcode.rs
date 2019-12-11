@@ -398,4 +398,9 @@ pub mod util {
         let mut iter = iter.into_iter();
         move || iter.next().ok_or(Error::ReadingNotSupported)
     }
+
+    pub fn parse_intcode(s: &str) -> nom::IResult<&str, Vec<Value>> {
+        use crate::parsers::*;
+        separated_list(char(','), i64_str)(s)
+    }
 }
