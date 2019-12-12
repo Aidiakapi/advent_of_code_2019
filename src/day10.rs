@@ -51,7 +51,7 @@ fn find_ideal_spot(asteroids: &HashSet<Vec2>) -> (Vec2, usize) {
                             .all(|pos| !asteroids.contains(&(pos + asteroid1)))
                     })
                     .count()
-                    // subtract 1, because pos itself is also visible
+                    // subtract 1, because asteroid1 itself is also visible
                     - 1,
             )
         })
