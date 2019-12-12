@@ -1,12 +1,34 @@
-use crate::intcode::{sparse_memory, util::parse_intcode, Error, IoOperation, Value, VM};
+use crate::intcode::{self, sparse_memory, util::parse_intcode, IoOperation, Value, VM};
 use crate::vec2::{AabbIteratorEx, Vec2i};
 use crate::HashMap;
+use std::convert::{Into, TryFrom, TryInto};
 module!(pt1: parse_intcode, pt2: parse_intcode);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Color {
     Black,
     White,
+}
+impl From<Color> for Value {
+    fn from(color: Color) -> Value {
+        match color {
+            Color::Black => 0,
+            Color::White => 1,
+        }
+    }
+}
+impl TryFrom<Value> for Color {
+    type Error = intcode::Error;
+    fn try_from(value: Value) -> intcode::Result<Color> {
+        match value {
+            0 => Ok(Color::Black),
+            1 => Ok(Color::White),
+            _ => Err(intcode::Error::Custom(format!(
+                "cannot convert {} into color",
+                value
+            ))),
+        }
+    }
 }
 
 fn paint(memory: Vec<Value>, starting_color: Color) -> Result<HashMap<Vec2i, Color>> {
@@ -19,30 +41,17 @@ fn paint(memory: Vec<Value>, starting_color: Color) -> Result<HashMap<Vec2i, Col
     vm.run_all_async(|op| {
         match op {
             IoOperation::Read(target) => {
-                *target = Some(match panels.get(&pos).cloned().unwrap_or(Color::Black) {
-                    Color::Black => 0,
-                    Color::White => 1,
-                })
+                *target = Some(panels.get(&pos).cloned().unwrap_or(Color::Black).into())
             }
             IoOperation::Write(value) => {
                 if is_painting {
-                    let color = match value {
-                        0 => Color::Black,
-                        1 => Color::White,
-                        _ => {
-                            return Err(Error::Custom(format!(
-                                "expected 0 or 1 during painting, got {}",
-                                value
-                            )))
-                        }
-                    };
-                    panels.insert(pos, color);
+                    panels.insert(pos, value.try_into()?);
                 } else {
                     match value {
                         0 => direction = Vec2i::new(direction.y, -direction.x),
                         1 => direction = Vec2i::new(-direction.y, direction.x),
                         _ => {
-                            return Err(Error::Custom(format!(
+                            return Err(intcode::Error::Custom(format!(
                                 "expected 0 or 1 during rotation, got {}",
                                 value
                             )))
