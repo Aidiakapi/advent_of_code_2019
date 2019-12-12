@@ -59,6 +59,11 @@ fn find_ideal_spot(asteroids: &HashSet<Vec2>) -> (Vec2, usize) {
         .unwrap()
 }
 
+fn quantized_angle(pos: Vec2) -> u32 {
+    let quantized = ((pos.x as f64).atan2(-pos.y as f64) * 100_000_000f64).round() as i32;
+    quantized as u32
+}
+
 fn vaporization_order(mut asteroids: HashSet<Vec2>) -> (Vec2, Vec<Vec2>) {
     let laser = find_ideal_spot(&asteroids).0;
     asteroids.remove(&laser);
@@ -69,10 +74,7 @@ fn vaporization_order(mut asteroids: HashSet<Vec2>) -> (Vec2, Vec<Vec2>) {
         let closer_to_center_count = closer_to_center(asteroid)
             .filter(|&pos| asteroids.contains(&(pos + laser)))
             .count();
-        (
-            closer_to_center_count,
-            ORIENTATION_TABLE[(asteroid.y + 30) as usize][(asteroid.x + 30) as usize],
-        )
+        (closer_to_center_count, quantized_angle(asteroid))
     });
     for asteroid in &mut vaporization_order {
         *asteroid += laser;
@@ -162,5 +164,3 @@ fn day10() -> Result<()> {
 
     Ok(())
 }
-
-include!("day10_table.rs");
