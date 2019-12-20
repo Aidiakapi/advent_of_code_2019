@@ -393,6 +393,58 @@ pub mod util {
         }
     }
 
+    pub trait Batch: Default {
+        const N: usize;
+        fn store(&mut self, n: usize, value: Value) -> Result<()>;
+    }
+    pub fn write_batching<B, F>(mut callback: F) -> impl FnMut(Value) -> Result<()>
+    where
+        B: Batch,
+        F: FnMut(B) -> Result<()>,
+    {
+        let mut n = 0;
+        let mut storage = B::default();
+        move |value| {
+            storage.store(n, value)?;
+            if n == B::N - 1 {
+                n = 0;
+                let mut temp = B::default();
+                std::mem::swap(&mut temp, &mut storage);
+                callback(temp)
+            } else {
+                n += 1;
+                Ok(())
+            }
+        }
+    }
+
+    macro_rules! replace_tt {
+        ($expr:tt, $sub:tt) => {
+            $sub
+        };
+    }
+    macro_rules! impl_batch_trait {
+        ($count:tt, $($n:tt),+) => {
+            impl Batch for ($(replace_tt!($n, Value)),+) {
+                const N: usize = $count;
+
+                #[inline]
+                fn store(&mut self, n: usize, value: Value) -> Result<()> {
+                    match n {
+                        $($n => self.$n = value,)+
+                        _ => unreachable!(),
+                    }
+                    Ok(())
+                }
+            }
+        };
+    }
+    impl_batch_trait!(2, 0, 1);
+    impl_batch_trait!(3, 0, 1, 2);
+    impl_batch_trait!(4, 0, 1, 2, 3);
+    impl_batch_trait!(5, 0, 1, 2, 3, 4);
+    impl_batch_trait!(6, 0, 1, 2, 3, 4, 5);
+
     pub fn read_from_iter<I>(iter: I) -> impl FnMut() -> Result<Value>
     where
         I: IntoIterator<Item = Value>,
