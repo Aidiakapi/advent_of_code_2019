@@ -1,15 +1,18 @@
 use crate::graph::dfs;
 use crate::HashMap;
+use std::cmp::Ordering;
 use std::collections::hash_map::Entry;
 
 module!(pt1: parse, pt2: parse);
 
-fn produce_one_fuel<'s>(
+fn calculate_ore_cost<'s>(
     transformations: &Transformations<'s>,
+    fuel_goal: u64,
     spare: &mut HashMap<&'s str, u64>,
 ) -> u64 {
+    spare.clear();
     let mut ore_demand = 0;
-    dfs(Molecule(1, "FUEL"), |mut molecule| {
+    dfs(Molecule(fuel_goal, "FUEL"), |mut molecule| {
         match spare.entry(molecule.1) {
             Entry::Vacant(_) => {}
             Entry::Occupied(mut slot) => {
@@ -43,23 +46,57 @@ fn produce_one_fuel<'s>(
 
 fn pt1<'s>(transformations: Transformations<'s>) -> u64 {
     let mut spare = HashMap::new();
-    produce_one_fuel(&transformations, &mut spare)
+    calculate_ore_cost(&transformations, 1, &mut spare)
 }
 
-// TODO: Make not super slow
-fn pt2<'s>(transformations: Transformations<'s>) -> u64 {
-    let mut spare = HashMap::new();
-    let mut total_ore_demand = 0;
-    let mut fuel_produced = 0;
+/// Calculates the range of fuel produced in which pt2's output will reside
+/// returns (low, high) where low is an inclusive lower bound, and high is
+/// and exclusive upper bound.
+/// Runs in O(log n).
+fn find_fuel_produced_range<'s>(
+    transformations: &Transformations<'s>,
+    spare: &mut HashMap<&'s str, u64>,
+) -> (u64, u64) {
+    let mut low = 0;
+    let mut high = 1;
+
     loop {
-        total_ore_demand += produce_one_fuel(&transformations, &mut spare);
-        if total_ore_demand > 1_000_000_000_000u64 {
-            break fuel_produced;
+        let ore_cost = calculate_ore_cost(transformations, high, spare);
+        match ore_cost.cmp(&1_000_000_000_000) {
+            Ordering::Less => {
+                low = high;
+                high *= 2;
+            }
+            Ordering::Equal => break (high, high + 1),
+            Ordering::Greater => break (low, high),
         }
-        fuel_produced += 1;
     }
 }
-`
+
+fn pt2<'s>(transformations: Transformations<'s>) -> u64 {
+    let mut spare = HashMap::new();
+    let (mut low, mut high) = find_fuel_produced_range(&transformations, &mut spare);
+
+    // O(log n) binary search within the range
+    loop {
+        match high - low {
+            0 | 1 => break low,
+            _ => {}
+        }
+        let midpoint = (high - low) / 2 + low;
+        let ore_cost = calculate_ore_cost(&transformations, midpoint, &mut spare);
+        match ore_cost.cmp(&1_000_000_000_000) {
+            Ordering::Less => {
+                low = midpoint;
+            }
+            Ordering::Equal => break midpoint,
+            Ordering::Greater => {
+                high = midpoint;
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Molecule<'s>(u64, &'s str);
 
