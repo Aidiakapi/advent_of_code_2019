@@ -1,3 +1,4 @@
+use crate::direction::{Direction, MoveInDirection};
 use crate::graph::{astar_once, dfs};
 use crate::intcode::{
     sparse_memory, util::parse_intcode, Error as icError, IoOperation, Value, VM,
@@ -6,7 +7,7 @@ use crate::vec2::AabbIteratorEx;
 use crate::HashMap;
 use arrayvec::ArrayVec;
 use std::collections::hash_map::Entry;
-use std::convert::{Into, TryFrom, TryInto};
+use std::convert::{TryFrom, TryInto};
 
 type Vec2 = crate::vec2::Vec2<Value>;
 type Map = HashMap<Vec2, Tile>;
@@ -43,8 +44,13 @@ fn map_area(memory: &Vec<Value>) -> Result<(Map, Vec2)> {
                     return Ok(());
                 };
 
-                direction.modify_position(&mut position);
-                *value = Some(direction.into());
+                position = position.step_in_direction(direction);
+                *value = Some(match direction {
+                    Direction::North => 1,
+                    Direction::South => 2,
+                    Direction::West => 3,
+                    Direction::East => 4,
+                });
             }
             IoOperation::Write(value) => {
                 // Update map
@@ -57,7 +63,7 @@ fn map_area(memory: &Vec<Value>) -> Result<(Map, Vec2)> {
                     // Undo if bumped into a wall
                     Tile::Wall => {
                         let dir = stack.pop().unwrap();
-                        dir.reverse().modify_position(&mut position);
+                        position = position.step_in_direction(dir.reverse());
                     }
                     Tile::OxygenSystem => {
                         if let Some(prev) = oxygen_position {
@@ -162,49 +168,6 @@ fn pt2(memory: Vec<Value>) -> Result<usize> {
     });
 
     Ok(dist_map.values().cloned().max().unwrap())
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Direction {
-    North,
-    South,
-    West,
-    East,
-}
-
-impl From<Direction> for Value {
-    fn from(dir: Direction) -> Value {
-        use Direction::*;
-        match dir {
-            North => 1,
-            South => 2,
-            West => 3,
-            East => 4,
-        }
-    }
-}
-
-impl Direction {
-    #[inline]
-    fn reverse(&self) -> Direction {
-        use Direction::*;
-        match *self {
-            North => South,
-            South => North,
-            West => East,
-            East => West,
-        }
-    }
-
-    fn modify_position(&self, position: &mut Vec2) {
-        use Direction::*;
-        match *self {
-            North => position.y -= 1,
-            South => position.y += 1,
-            West => position.x -= 1,
-            East => position.x += 1,
-        }
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,5 +1,6 @@
 module!(pt1: parse, pt2: parse);
 
+use crate::direction::{Direction, MoveInDirection};
 use crate::{HashMap, HashSet};
 use num::traits::Zero;
 use std::iter::FromIterator;
@@ -28,7 +29,7 @@ where
             curr = self.curr.as_mut()?;
         }
         curr.distance -= 1;
-        curr.direction.modify_position(&mut self.pos, 1);
+        self.pos = self.pos.step_in_direction(curr.direction);
         Some(self.pos)
     }
 }
@@ -73,33 +74,13 @@ struct Command {
     distance: usize,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Direction {
-    Left,
-    Up,
-    Right,
-    Down,
-}
-
-impl Direction {
-    #[rustfmt::skip]
-    pub fn modify_position(&self, pos: &mut Vec2, distance: i64) {
-        match *self {
-            Direction::Left  => pos.x -= distance,
-            Direction::Up    => pos.y -= distance,
-            Direction::Right => pos.x += distance,
-            Direction::Down  => pos.y += distance,
-        }
-    }
-}
-
 fn parse(s: &str) -> IResult<&str, (Wire, Wire)> {
     use parsers::*;
-    let direction = map(one_of("LURD"), |c: char| match c {
-        'L' => Direction::Left,
-        'U' => Direction::Up,
-        'R' => Direction::Right,
-        'D' => Direction::Down,
+    let direction = map(one_of("UDLR"), |c: char| match c {
+        'U' => Direction::North,
+        'D' => Direction::South,
+        'L' => Direction::West,
+        'R' => Direction::East,
         _ => unreachable!(),
     });
     let command = map(pair(direction, usize_str), |(direction, distance)| {

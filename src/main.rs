@@ -1,7 +1,8 @@
-#![feature(optin_builtin_traits, test, trait_alias)]
+#![feature(drain_filter, is_sorted, optin_builtin_traits, test, trait_alias, trusted_len)]
 
 extern crate test;
 
+pub(crate) mod direction;
 pub(crate) mod error;
 pub(crate) mod graph;
 pub(crate) mod intcode;
@@ -34,4 +35,5 @@ generate_main!(
     day14
     day15
     day16
+    day17
 );

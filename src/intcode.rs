@@ -149,6 +149,7 @@ impl TryFrom<Value> for Mode {
 pub trait Memory: Sized + Clone {
     fn read(&self, idx: Value) -> Result<Value>;
     fn write(&mut self, idx: Value, value: Value) -> Result<()>;
+    fn largest_index(&self) -> Value;
 }
 
 pub fn fixed_memory<I>(initial: I) -> impl Memory
@@ -171,6 +172,13 @@ where
     )
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct GrowingMemory(Vec<Value>);
+
+pub fn growing_memory(memory: Vec<Value>) -> impl Memory {
+    GrowingMemory(memory)
+}
+
 impl Memory for Vec<Value> {
     fn read(&self, idx: Value) -> Result<Value> {
         idx.to_usize()
@@ -185,6 +193,9 @@ impl Memory for Vec<Value> {
                 *target = value;
             })
             .ok_or(Error::IndexOutOfRange(idx))
+    }
+    fn largest_index(&self) -> Value {
+        (self.len() as Value) - 1
     }
 }
 impl Memory for HashMap<Value, Value> {
@@ -203,6 +214,44 @@ impl Memory for HashMap<Value, Value> {
                 }
             })
             .ok_or(Error::IndexOutOfRange(idx))
+    }
+    fn largest_index(&self) -> Value {
+        self.keys().cloned().max().unwrap_or(-1)
+    }
+}
+impl Memory for GrowingMemory {
+    fn read(&self, idx: Value) -> Result<Value> {
+        match idx.to_usize() {
+            Some(idx) => Ok(self.0.get(idx).cloned().unwrap_or(0)),
+            None => Err(Error::IndexOutOfRange(idx)),
+        }
+    }
+    fn write(&mut self, idx: Value, value: Value) -> Result<()> {
+        match idx.to_usize() {
+            Some(idx) => {
+                if idx >= self.0.len() {
+                    if value == 0 {
+                        return Ok(());
+                    } else {
+                        self.0.reserve(idx - self.0.len() + 1);
+                        self.0.resize(idx + 1, 0);
+                    }
+                }
+                self.0[idx] = value;
+                Ok(())
+            }
+            None => Err(Error::IndexOutOfRange(idx)),
+        }
+    }
+    fn largest_index(&self) -> Value {
+        let mut slice = self.0.as_slice();
+        while let Some(nr) = slice.last().cloned() {
+            if nr != 0 {
+                break;
+            }
+            slice = &slice[0..slice.len() - 1];
+        }
+        (slice.len() as Value) - 1
     }
 }
 
@@ -456,5 +505,140 @@ pub mod util {
     pub fn parse_intcode(s: &str) -> nom::IResult<&str, Vec<Value>> {
         use crate::parsers::*;
         separated_list(char(','), i64_str)(s)
+    }
+}
+
+pub mod debugger {
+    use super::*;
+
+    pub fn disassemble<M: Memory>(vm: &VM<M>) -> String {
+        use arrayvec::ArrayVec;
+        use std::fmt::Write;
+        macro_rules! out {
+            ($($tks:tt)*) => {
+                write!($($tks)*).expect("failed to write to string");
+            };
+        }
+        let mut d = String::new();
+        out!(d, "Instructions:\nFLG        ADDR        VALUE   DESC\n");
+
+        let mut ptr = 0;
+        let max_idx = vm.memory.largest_index();
+        'outer: while ptr <= max_idx {
+            if ptr == vm.registers.ip {
+                out!(d, ">");
+            } else {
+                out!(d, " ");
+            }
+            if ptr == vm.registers.relative_base {
+                out!(d, "@");
+            } else {
+                out!(d, " ");
+            }
+            out!(d, "   {: >10}   ", ptr);
+            let instruction = match vm.memory.read(ptr) {
+                Ok(instruction) => instruction,
+                Err(err) => {
+                    out!(d, "             cannot read memory at address ({})\n", err);
+                    ptr += 1;
+                    continue;
+                }
+            };
+            out!(d, "{: >10}   ", instruction);
+            let opcode = match Opcode::try_from(instruction % 100) {
+                Ok(opcode) => opcode,
+                Err(err) => {
+                    out!(d, "cannot parse opcode ({})\n", err);
+                    ptr += 1;
+                    continue;
+                }
+            };
+
+            let (in_params, out_params): (usize, usize) = match opcode {
+                Opcode::Add => (2, 1),
+                Opcode::Multiply => (2, 1),
+                Opcode::Input => (0, 1),
+                Opcode::Output => (1, 0),
+                Opcode::JumpIfTrue => (2, 0),
+                Opcode::JumpIfFalse => (2, 0),
+                Opcode::LessThan => (2, 1),
+                Opcode::Equals => (2, 1),
+                Opcode::AdjRelBase => (1, 0),
+                Opcode::Halt => (0, 0),
+            };
+
+            let modes = {
+                let mut mode_list = ArrayVec::<[Mode; 3]>::new();
+                let mut modes = instruction / 100;
+                for idx in 0..in_params + out_params {
+                    mode_list.push(match Mode::try_from(modes % 10) {
+                        Ok(mode) => mode,
+                        Err(err) => {
+                            out!(d, "cannot decode mode for param {} ({})\n", idx, err);
+                            ptr += (in_params + out_params + 1) as Value;
+                            continue 'outer;
+                        }
+                    });
+                    modes /= 10;
+                }
+                mode_list
+            };
+
+            let values = {
+                let mut values = ArrayVec::<[Value; 4]>::new();
+                for idx in 0..in_params + out_params {
+                    values.push(match vm.memory.read(ptr + 1 + idx as Value) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            out!(d, "cannot read value for param {} ({})", idx, err);
+                            ptr += (in_params + out_params + 1) as Value;
+                            continue 'outer;
+                        }
+                    });
+                }
+                values
+            };
+
+            let str_st_len = d.len();
+            out!(
+                d,
+                "{} ",
+                match opcode {
+                    Opcode::Add => "add",
+                    Opcode::Multiply => "mul",
+                    Opcode::Input => "inp",
+                    Opcode::Output => "out",
+                    Opcode::JumpIfTrue => "jit",
+                    Opcode::JumpIfFalse => "jif",
+                    Opcode::LessThan => "clt",
+                    Opcode::Equals => "ceq",
+                    Opcode::AdjRelBase => "rel",
+                    Opcode::Halt => "hcf",
+                }
+            );
+            for i in 0..in_params + out_params {
+                match modes[i] {
+                    Mode::Immediate => out!(d, "{}", values[i]),
+                    Mode::Position => out!(d, "[{}]", values[i]),
+                    Mode::Relative => out!(d, "@[{}]", values[i]),
+                }
+                if in_params > 0 && i == in_params - 1 {
+                    if out_params != 0 {
+                        out!(d, " => ");
+                    }
+                } else if i != in_params + out_params - 1 {
+                    out!(d, ", ");
+                }
+            }
+
+            for _ in d.len() - str_st_len..50 {
+                out!(d, " ");
+            }
+            out!(d, "\n");
+
+            ptr += (in_params + out_params + 1) as Value;
+        }
+
+        d
     }
 }
