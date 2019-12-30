@@ -12,6 +12,15 @@ pub enum Direction {
 }
 
 impl Direction {
+    #[inline]
+    pub fn vertical() -> impl Iterator<Item = Direction> + ExactSizeIterator + TrustedLen {
+        [Direction::North, Direction::South].iter().cloned()
+    }
+    #[inline]
+    pub fn horizontal() -> impl Iterator<Item = Direction> + ExactSizeIterator + TrustedLen {
+        [Direction::West, Direction::East].iter().cloned()
+    }
+    #[inline]
     pub fn each() -> impl Iterator<Item = Direction> + ExactSizeIterator + TrustedLen {
         [
             Direction::North,
@@ -21,6 +30,36 @@ impl Direction {
         ]
         .iter()
         .cloned()
+    }
+
+    #[inline]
+    pub fn vertical_arr<T, F>(mut f: F) -> [T; 2]
+    where
+        T: Sized,
+        F: FnMut(Direction) -> T,
+    {
+        [f(Direction::North), f(Direction::South)]
+    }
+    #[inline]
+    pub fn horizontal_arr<T, F>(mut f: F) -> [T; 2]
+    where
+        T: Sized,
+        F: FnMut(Direction) -> T,
+    {
+        [f(Direction::West), f(Direction::East)]
+    }
+    #[inline]
+    pub fn each_arr<T, F>(mut f: F) -> [T; 4]
+    where
+        T: Sized,
+        F: FnMut(Direction) -> T,
+    {
+        [
+            f(Direction::North),
+            f(Direction::South),
+            f(Direction::West),
+            f(Direction::East),
+        ]
     }
 
     #[inline]
