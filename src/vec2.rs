@@ -8,6 +8,7 @@ use num::traits::{
 use std::cmp::Ordering;
 use std::convert::TryFrom;
 use std::fmt;
+use std::iter::{ExactSizeIterator, IntoIterator, Iterator, TrustedLen};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Rem, RemAssign, Sub, SubAssign,
 };
@@ -329,6 +330,60 @@ where
         write!(f, "{},{}", self.x, self.y)
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum IterState {
+    X,
+    Y,
+    None,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Vec2Iter<T> {
+    x: Option<T>,
+    y: Option<T>,
+}
+
+impl<T> IntoIterator for Vec2<T> {
+    type Item = T;
+    type IntoIter = Vec2Iter<T>;
+    fn into_iter(self) -> Vec2Iter<T> {
+        Vec2Iter {
+            x: Some(self.x),
+            y: Some(self.y),
+        }
+    }
+}
+impl<T> Iterator for Vec2Iter<T> {
+    type Item = T;
+    fn next(&mut self) -> Option<T> {
+        let mut v = None;
+        std::mem::swap(&mut v, &mut self.x);
+        if let Some(v) = v {
+            std::mem::swap(&mut self.x, &mut self.y);
+            Some(v)
+        } else {
+            None
+        }
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let l = self.len();
+        (l, Some(l))
+    }
+}
+impl<T> ExactSizeIterator for Vec2Iter<T> {
+    #[inline]
+    fn len(&self) -> usize {
+        match (self.x.is_some(), self.y.is_some()) {
+            (true, true) => 2,
+            (true, false) => 1,
+            (false, true) => 1,
+            (false, false) => 0,
+        }
+    }
+}
+unsafe impl<T> TrustedLen for Vec2Iter<T> {}
 
 pub trait AabbIteratorEx<T>: Iterator {
     fn aabb(self) -> Option<(Vec2<T>, Vec2<T>)>;

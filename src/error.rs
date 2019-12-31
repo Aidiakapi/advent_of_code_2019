@@ -8,6 +8,8 @@ pub enum AoCError {
     ParseInt(#[from] std::num::ParseIntError),
     #[error("parse float error")]
     ParseFloat(#[from] std::num::ParseFloatError),
+    #[error("int conversion error")]
+    TryFromInt(#[from] std::num::TryFromIntError),
     #[error("nom parse error")]
     NomParse(String),
     #[error("incomplete parse (remainder {remainder:?})")]

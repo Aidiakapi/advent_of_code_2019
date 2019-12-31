@@ -152,14 +152,18 @@ pub trait Memory: Sized + Clone {
     fn largest_index(&self) -> Value;
 }
 
-pub fn fixed_memory<I>(initial: I) -> impl Memory
+pub trait MemoryIntoData<T>: Memory + Sized + Clone + Default {
+    fn into_data(self) -> T;
+}
+
+pub fn fixed_memory<I>(initial: I) -> impl Memory + MemoryIntoData<Vec<Value>>
 where
     I: IntoIterator<Item = Value>,
 {
     Vec::from_iter(initial)
 }
 
-pub fn sparse_memory<I>(initial: I) -> impl Memory
+pub fn sparse_memory<I>(initial: I) -> impl Memory + MemoryIntoData<HashMap<Value, Value>>
 where
     I: IntoIterator<Item = Value>,
 {
@@ -172,10 +176,10 @@ where
     )
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct GrowingMemory(Vec<Value>);
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct GrowingMemory(pub Vec<Value>);
 
-pub fn growing_memory(memory: Vec<Value>) -> impl Memory {
+pub fn growing_memory(memory: Vec<Value>) -> GrowingMemory {
     GrowingMemory(memory)
 }
 
@@ -196,6 +200,11 @@ impl Memory for Vec<Value> {
     }
     fn largest_index(&self) -> Value {
         (self.len() as Value) - 1
+    }
+}
+impl MemoryIntoData<Vec<Value>> for Vec<Value> {
+    fn into_data(self) -> Self {
+        self
     }
 }
 impl Memory for HashMap<Value, Value> {
@@ -219,6 +228,12 @@ impl Memory for HashMap<Value, Value> {
         self.keys().cloned().max().unwrap_or(-1)
     }
 }
+impl MemoryIntoData<HashMap<Value, Value>> for HashMap<Value, Value> {
+    fn into_data(self) -> Self {
+        self
+    }
+}
+
 impl Memory for GrowingMemory {
     fn read(&self, idx: Value) -> Result<Value> {
         match idx.to_usize() {
@@ -252,6 +267,11 @@ impl Memory for GrowingMemory {
             slice = &slice[0..slice.len() - 1];
         }
         (slice.len() as Value) - 1
+    }
+}
+impl MemoryIntoData<Vec<Value>> for GrowingMemory {
+    fn into_data(self) -> Vec<Value> {
+        self.0
     }
 }
 

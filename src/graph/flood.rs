@@ -1,28 +1,31 @@
 #![allow(dead_code)]
-use crate::HashSet;
+use crate::HashMap;
+use std::collections::hash_map::Entry;
 use std::hash::Hash;
 
 #[inline(always)]
 pub fn flood<N, FN, NI>(start: N, mut next: FN)
 where
-    N: Eq + Hash + Clone, // TODO: Remove requirement for clone
+    N: Eq + Hash,
     FN: FnMut(&N) -> NI,
     NI: IntoIterator<Item = N>,
 {
-    let mut visited = HashSet::new();
+    let mut visited = HashMap::new();
     flood_impl(&mut visited, start, &mut next);
 }
 
-fn flood_impl<N, FN, NI>(visited: &mut HashSet<N>, current: N, next: &mut FN)
+fn flood_impl<N, FN, NI>(visited: &mut HashMap<N, ()>, current: N, next: &mut FN)
 where
-    N: Eq + Hash + Clone, // TODO: Remove requirement for clone
+    N: Eq + Hash,
     FN: FnMut(&N) -> NI,
     NI: IntoIterator<Item = N>,
 {
-    if !visited.insert(current.clone()) {
+    let entry = visited.entry(current);
+    if let Entry::Occupied(_) = &entry {
         return;
     }
-    let current = visited.get(&current).unwrap();
+    let entry = entry.insert(());
+    let current = entry.key();
 
     for successor in next(current) {
         flood_impl(visited, successor, next);
