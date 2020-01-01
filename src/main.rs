@@ -1,4 +1,15 @@
-#![feature(drain_filter, entry_insert, hash_set_entry, is_sorted, maybe_uninit_extra, optin_builtin_traits, test, trait_alias, trusted_len)]
+#![feature(
+    drain_filter,
+    entry_insert,
+    hash_set_entry,
+    is_sorted,
+    maybe_uninit_extra,
+    optin_builtin_traits,
+    option_unwrap_none,
+    test,
+    trait_alias,
+    trusted_len
+)]
 
 extern crate test;
 
@@ -38,4 +49,5 @@ generate_main!(
     day17
     day18
     day19
+    day20
 );

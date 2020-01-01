@@ -177,7 +177,7 @@ where
         Ok(input) => {
             let mut last_part = None;
             executor(
-                input.trim(),
+                input.trim_matches(|c| c == '\n' || c == '\r'),
                 Closure {
                     module_name,
                     stdout: &mut stdout,

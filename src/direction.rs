@@ -13,15 +13,15 @@ pub enum Direction {
 
 impl Direction {
     #[inline]
-    pub fn vertical() -> impl Iterator<Item = Direction> + ExactSizeIterator + TrustedLen {
+    pub fn vertical() -> impl Iterator<Item = Direction> + ExactSizeIterator + TrustedLen + Clone {
         [Direction::North, Direction::South].iter().cloned()
     }
     #[inline]
-    pub fn horizontal() -> impl Iterator<Item = Direction> + ExactSizeIterator + TrustedLen {
+    pub fn horizontal() -> impl Iterator<Item = Direction> + ExactSizeIterator + TrustedLen + Clone {
         [Direction::West, Direction::East].iter().cloned()
     }
     #[inline]
-    pub fn each() -> impl Iterator<Item = Direction> + ExactSizeIterator + TrustedLen {
+    pub fn each() -> impl Iterator<Item = Direction> + ExactSizeIterator + TrustedLen + Clone {
         [
             Direction::North,
             Direction::South,
