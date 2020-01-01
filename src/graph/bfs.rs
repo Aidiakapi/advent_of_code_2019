@@ -4,7 +4,7 @@ use std::collections::{hash_map::Entry, VecDeque};
 use std::hash::Hash;
 
 #[inline(always)]
-pub fn bfs<N, FN, FD, NI>(start: N, mut next: FN, mut done: FD)
+pub fn bfs<N, FN, FD, NI>(start: N, mut next: FN, mut done: FD) -> bool
 where
     N: Hash + Eq,
     FN: FnMut(&N) -> NI,
@@ -18,7 +18,7 @@ where
     )
 }
 
-pub fn bfs_meta<N, M, FN, FD, NI>(start: (N, M), mut next: FN, mut done: FD)
+pub fn bfs_meta<N, M, FN, FD, NI>(start: (N, M), mut next: FN, mut done: FD) -> bool
 where
     N: Hash + Eq,
     FN: FnMut(&N, &M) -> NI,
@@ -37,7 +37,7 @@ where
             let node = entry.key();
             let meta = entry.get();
             if done(node, meta) {
-                return;
+                return true;
             }
             queue.extend(next(node, meta));
         }
@@ -49,4 +49,5 @@ where
             break;
         }
     }
+    false
 }

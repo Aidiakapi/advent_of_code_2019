@@ -1,12 +1,11 @@
 use crate::direction::{Direction, MoveInDirection};
-use crate::graph::{astar_once, dfs};
+use crate::graph::{astar_once, bfs_meta};
 use crate::intcode::{
     sparse_memory, util::parse_intcode, Error as icError, IoOperation, Value, VM,
 };
 use crate::vec2::AabbIteratorEx;
 use crate::HashMap;
 use arrayvec::ArrayVec;
-use std::collections::hash_map::Entry;
 use std::convert::{TryFrom, TryInto};
 
 type Vec2 = crate::vec2::Vec2<Value>;
@@ -144,30 +143,21 @@ fn pt1(memory: Vec<Value>) -> Result<usize> {
 
 fn pt2(memory: Vec<Value>) -> Result<usize> {
     let (map, oxygen_position) = map_area(&memory)?;
-    let mut dist_map = HashMap::new();
-    dfs((oxygen_position, 0), |(pos, dist)| {
-        let mut neighbors = neighbors(&map, pos);
-        match dist_map.entry(pos) {
-            Entry::Occupied(mut prev_dist) => {
-                let prev_dist = prev_dist.get_mut();
-                // Already visited this position with a more optimal route
-                if *prev_dist <= dist {
-                    neighbors.clear();
-                }
-                // Revisiting from an optimized route
-                else {
-                    *prev_dist = dist;
-                }
-            }
-            Entry::Vacant(slot) => {
-                slot.insert(dist);
-            }
-        }
+    let mut max_dist = 0;
+    bfs_meta(
+        (oxygen_position, 0),
+        |&pos, &dist| {
+            neighbors(&map, pos)
+                .into_iter()
+                .map(move |pos| (pos, dist + 1))
+        },
+        |_, &dist| {
+            max_dist = dist;
+            false
+        },
+    );
 
-        neighbors.into_iter().map(move |pos| (pos, dist + 1))
-    });
-
-    Ok(dist_map.values().cloned().max().unwrap())
+    Ok(max_dist)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
