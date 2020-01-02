@@ -1,6 +1,6 @@
 use crate::intcode::{
     self,
-    util::{parse_intcode, read_from_iter, write_single_value},
+    util::{parse_intcode, read_from_iter, write_once},
     GrowingMemory, Value, VM,
 };
 use crate::vec2::Vec2us;
@@ -16,7 +16,7 @@ fn is_in_tractor_beam(
     let mut res = None;
     let vm_result = vm.run_all(
         read_from_iter(pos.convert::<Value>()?),
-        write_single_value(&mut res),
+        write_once(&mut res),
     );
 
     // Reset VM memory to original

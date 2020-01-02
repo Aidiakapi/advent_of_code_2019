@@ -1,6 +1,6 @@
 use crate::intcode::{
     sparse_memory,
-    util::{parse_intcode, read_from_iter, write_single_value},
+    util::{parse_intcode, read_from_iter, write_once},
     Value, VM,
 };
 use std::iter::once;
@@ -9,7 +9,7 @@ module!(pt1: parse_intcode, pt2: parse_intcode);
 fn run_program(memory: Vec<Value>, input: Value) -> Result<Value> {
     let mut vm = VM::new(sparse_memory(memory));
     let mut output = None;
-    vm.run_all(read_from_iter(once(input)), write_single_value(&mut output))?;
+    vm.run_all(read_from_iter(once(input)), write_once(&mut output))?;
 
     output.ok_or(AoCError::Logic("intcode program didn't return a value"))
 }

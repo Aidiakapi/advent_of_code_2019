@@ -1,5 +1,5 @@
 use crate::intcode::{
-    util::{parse_intcode, read_from_iter, write_single_value},
+    util::{parse_intcode, read_from_iter, write_once},
     IoOperation, VM,
 };
 use itertools::Itertools;
@@ -16,7 +16,7 @@ fn pt1(memory: Vec<i64>) -> Result<String> {
             let mut vm = VM::new(memory.clone());
             vm.run_all(
                 read_from_iter([phase, last_output].iter().cloned()),
-                write_single_value(&mut output),
+                write_once(&mut output),
             )?;
             last_output =
                 output.ok_or(AoCError::Logic("intcode program did not produce an output"))?;

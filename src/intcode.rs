@@ -42,6 +42,7 @@
 
 use crate::HashMap;
 use num::ToPrimitive;
+use std::collections::VecDeque;
 use std::convert::TryFrom;
 use std::iter::FromIterator;
 use thiserror::Error;
@@ -63,6 +64,8 @@ pub enum Error {
     ReadingNotSupported,
     #[error("writing is not supported")]
     WritingNotSupported,
+    #[error("invalid ASCII character ({0})")]
+    InvalidAsciiCharacter(char),
     #[error("{0}")]
     Custom(String),
 }
@@ -449,7 +452,7 @@ pub mod util {
         Err(Error::WritingNotSupported)
     }
 
-    pub fn write_single_value<'t>(
+    pub fn write_once<'t>(
         target: &'t mut Option<Value>,
     ) -> impl FnMut(Value) -> Result<()> + 't {
         move |value| {
@@ -525,6 +528,82 @@ pub mod util {
     pub fn parse_intcode(s: &str) -> nom::IResult<&str, Vec<Value>> {
         use crate::parsers::*;
         separated_list(char(','), i64_str)(s)
+    }
+}
+
+pub mod ascii {
+    use super::*;
+
+    pub enum AsciiOp<'str> {
+        Read(&'str mut String),
+        WriteAscii(char),
+        Write(Value),
+    }
+
+    pub trait Ascii {
+        fn run_ascii<F>(&mut self, io: F) -> Result<bool>
+        where
+            F: FnMut(AsciiOp) -> Result<()>;
+    }
+
+    impl<M: Memory> Ascii for VM<M> {
+        fn run_ascii<F>(&mut self, mut exec_op: F) -> Result<bool>
+        where
+            F: FnMut(AsciiOp) -> Result<()>,
+        {
+            let mut pending_chars = VecDeque::new();
+            let mut str_buf = String::new();
+            self.run_all_async(|io| match io {
+                IoOperation::Read(v) => {
+                    if pending_chars.is_empty() {
+                        exec_op(AsciiOp::Read(&mut str_buf))?;
+                        for c in str_buf.chars() {
+                            if c.is_ascii() {
+                                pending_chars.push_back(c as u8);
+                            } else {
+                                return Err(Error::InvalidAsciiCharacter(c));
+                            }
+                        }
+                        str_buf.clear();
+                    }
+                    *v = pending_chars.pop_front().map(|c| c as Value);
+                    Ok(())
+                }
+                IoOperation::Write(value) => {
+                    if value >= 0 && value < 128 {
+                        exec_op(AsciiOp::WriteAscii(value as u8 as char))
+                    } else {
+                        exec_op(AsciiOp::Write(value))
+                    }
+                }
+            })
+        }
+    }
+
+    pub fn interactive<A: Ascii>(vm: &mut A) -> Result<bool> {
+        let mut read_buff = String::new();
+        vm.run_ascii(|op| match op {
+            AsciiOp::Read(out) => {
+                std::io::stdin()
+                    .read_line(&mut read_buff)
+                    .map_err(|err| Error::Custom(format!("cannot read from stdin ({:?})", err)))?;
+
+                let new_len = read_buff.trim_end_matches(|c| c == '\r' || c == '\n').len();
+                read_buff.truncate(new_len);
+                
+                read_buff.push('\n');
+                std::mem::swap(out, &mut read_buff);
+                Ok(())
+            }
+            AsciiOp::WriteAscii(c) => {
+                print!("{}", c);
+                Ok(())
+            }
+            AsciiOp::Write(value) => {
+                print!("{{{}}}", value);
+                Ok(())
+            }
+        })
     }
 }
 

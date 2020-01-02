@@ -1,5 +1,5 @@
 use crate::intcode::{
-    util::{parse_intcode, reading_not_supported, write_single_value},
+    util::{parse_intcode, reading_not_supported, write_once},
     Error::WritingNotSupported,
     Value, VM,
 };
@@ -28,6 +28,6 @@ fn pt2(memory: Vec<Value>) -> Result<Value> {
     vm.registers.pending_in = Some(5);
 
     let mut output = None;
-    vm.run_all(reading_not_supported, write_single_value(&mut output))?;
+    vm.run_all(reading_not_supported, write_once(&mut output))?;
     output.ok_or(AoCError::Logic("intcode program wrote no output"))
 }

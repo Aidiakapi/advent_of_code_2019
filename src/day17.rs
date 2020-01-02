@@ -1,5 +1,6 @@
 use crate::direction::{Direction, MoveInDirection};
 use crate::intcode::{
+    ascii::{Ascii, AsciiOp},
     growing_memory,
     util::{parse_intcode, reading_not_supported},
     Error as icError, Value, VM,
@@ -128,32 +129,30 @@ fn pt2(mut memory: Vec<Value>) -> Result<Value> {
     input.push_str("n\n");
     // input.push_str("y\n");
 
-    let mut input = input.chars();
-
     memory[0] = 2;
     let mut vm = VM::new(growing_memory(memory));
     let mut dust = 0;
-    vm.run_all(
-        || {
-            input
-                .next()
-                .map(|c| c as Value)
-                .ok_or(icError::ReadingNotSupported)
-        },
-        |v| {
-            if v < 0 {
-                return Err(icError::Custom(format!(
-                    "value {} is not a valid output",
-                    v
-                )));
-            } else if v < 128 {
-                // print!("{}", v as u8 as char);
-            } else {
-                dust += v;
+    vm.run_ascii(|op| match op {
+        AsciiOp::Read(out) => {
+            if input.is_empty() {
+                reading_not_supported()?;
             }
+            std::mem::swap(out, &mut input);
             Ok(())
-        },
-    )?;
+        }
+        AsciiOp::WriteAscii(_) => Ok(()),
+        AsciiOp::Write(value) => {
+            if value < 0 {
+                Err(icError::Custom(format!(
+                    "value {} is not a valid output",
+                    value
+                )))
+            } else {
+                dust += value;
+                Ok(())
+            }
+        }
+    })?;
 
     Ok(dust)
 }
