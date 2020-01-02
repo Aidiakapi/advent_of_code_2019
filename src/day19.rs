@@ -55,8 +55,8 @@ fn pt2(memory: Vec<Value>) -> Result<usize> {
     let mut start_row = None;
     let mut rows = VecDeque::with_capacity(100);
     // Finds a valid starting point (where the beam becomes continuous)
-    'outer: for i in 0..20 {
-        for j in 0..20 {
+    'outer: for i in 0..30 {
+        for j in 0..30 {
             for &(mut x, mut y) in [(i, j), (j, i)].iter() {
                 if is_in_tractor_beam(x, y)
                     && is_in_tractor_beam(x + 1, y)
