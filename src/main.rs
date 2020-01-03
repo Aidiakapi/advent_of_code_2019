@@ -1,6 +1,8 @@
 #![feature(
+    const_in_array_repeat_expressions,
     drain_filter,
     entry_insert,
+    fixed_size_array,
     hash_set_entry,
     is_sorted,
     maybe_uninit_extra,
@@ -52,4 +54,5 @@ generate_main!(
     day20
     day21
     day22
+    day23
 );
