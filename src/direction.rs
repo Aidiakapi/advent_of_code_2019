@@ -96,7 +96,7 @@ impl Direction {
 pub trait MoveInDirection: Sized {
     type Bound;
     type Number: Ord + One;
-    fn move_within_bounds(
+    fn move_in_bounds(
         &self,
         direction: Direction,
         distance: Self::Number,
@@ -132,7 +132,7 @@ where
     type Bound = Self;
     type Number = I;
     #[inline]
-    fn move_within_bounds(
+    fn move_in_bounds(
         &self,
         direction: Direction,
         distance: Self::Number,

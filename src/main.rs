@@ -8,6 +8,7 @@
     maybe_uninit_extra,
     optin_builtin_traits,
     option_unwrap_none,
+    stmt_expr_attributes,
     test,
     trait_alias,
     trusted_len
@@ -55,4 +56,5 @@ generate_main!(
     day21
     day22
     day23
+    day24
 );

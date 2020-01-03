@@ -86,7 +86,7 @@ fn grid_to_graph(layout: &Mat2<Cell>) -> HashMap<Vec2us, Node> {
             let pos = Vec2us::new(x, y);
             // NSEW
             let neighbors = Direction::each_arr(|dir| {
-                pos.move_within_bounds(dir, 1, Vec2us::zero(), layout.size() - Vec2us::one())
+                pos.move_in_bounds(dir, 1, Vec2us::zero(), layout.size() - Vec2us::one())
                     .map(|pos| match layout[pos] {
                         Cell::Wall => false,
                         _ => true,
