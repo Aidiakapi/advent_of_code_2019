@@ -72,3 +72,21 @@ pub fn eof<T: nom::InputLength, E: ParseError<T>>(input: T) -> IResult<T, (), E>
         Err(nom::Err::Error(make_error(input, ErrorKind::Eof)))
     }
 }
+
+pub fn is_ascii_printable(c: char) -> bool {
+    let value = c as u64;
+    value >= 32 && value < 127
+}
+
+pub fn printable0<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+where
+    T: nom::InputTakeAtPosition<Item = char>,
+{
+    input.split_at_position_complete(|item| !is_ascii_printable(item))
+}
+pub fn printable1<T, E: ParseError<T>>(input: T) -> IResult<T, T, E>
+where
+    T: nom::InputTakeAtPosition<Item = char>,
+{
+    input.split_at_position1_complete(|item| !is_ascii_printable(item), ErrorKind::AlphaNumeric)
+}

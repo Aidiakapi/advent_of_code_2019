@@ -590,6 +590,9 @@ pub mod ascii {
 
                 let new_len = read_buff.trim_end_matches(|c| c == '\r' || c == '\n').len();
                 read_buff.truncate(new_len);
+                if read_buff == "#exit" {
+                    return Ok(());
+                }
                 
                 read_buff.push('\n');
                 std::mem::swap(out, &mut read_buff);

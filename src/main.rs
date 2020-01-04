@@ -28,6 +28,8 @@ pub(crate) mod vec2;
 pub(crate) mod vec3;
 
 #[allow(dead_code)]
+type Atom = string_cache::DefaultAtom;
+#[allow(dead_code)]
 type HashMap<K, V> = ahash::AHashMap<K, V>;
 #[allow(dead_code)]
 type HashSet<T> = ahash::AHashSet<T>;
@@ -57,4 +59,5 @@ generate_main!(
     day22
     day23
     day24
+    day25
 );
