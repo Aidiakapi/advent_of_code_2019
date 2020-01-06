@@ -122,7 +122,9 @@ pub fn get_exclusive_module() -> Option<String> {
 }
 
 pub fn read_module_input(module_name: &'static str) -> std::io::Result<String> {
-    std::fs::read_to_string(format!("./data/{}.txt", module_name))
+    std::fs::read_to_string(format!("./data/{}.txt", module_name)).map(|s| {
+        s.replace("\r\n", "\n")
+    })
 }
 
 pub struct Closure<'a> {
