@@ -63,9 +63,9 @@ impl Direction {
     }
 
     #[inline]
-    pub fn reverse(&self) -> Direction {
+    pub fn reverse(self) -> Direction {
         use Direction::*;
-        match *self {
+        match self {
             North => South,
             South => North,
             West => East,
@@ -73,18 +73,18 @@ impl Direction {
         }
     }
 
-    pub fn clockwise(&self) -> Direction {
+    pub fn clockwise(self) -> Direction {
         use Direction::*;
-        match *self {
+        match self {
             North => East,
             South => West,
             West => North,
             East => South,
         }
     }
-    pub fn counterclockwise(&self) -> Direction {
+    pub fn counterclockwise(self) -> Direction {
         use Direction::*;
-        match *self {
+        match self {
             North => West,
             South => East,
             West => South,

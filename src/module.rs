@@ -67,12 +67,12 @@ impl<O, E: Debug> ToModuleResult for IResult<&'_ str, O, E> {
     type Output = Result<O>;
     fn to_module_result(self) -> Self::Output {
         self.map_err(Into::into).and_then(|(remainder, result)| {
-            if remainder.len() != 0 {
+            if remainder.is_empty() {
+                Ok(result)
+            } else {
                 Err(AoCError::IncompleteParse {
                     remainder: remainder.to_owned(),
                 })
-            } else {
-                Ok(result)
             }
         })
     }
@@ -118,7 +118,7 @@ macro_rules! generate_main {
 }
 
 pub fn get_exclusive_module() -> Option<String> {
-    std::env::args().skip(1).next()
+    std::env::args().nth(1)
 }
 
 pub fn read_module_input(module_name: &'static str) -> std::io::Result<String> {

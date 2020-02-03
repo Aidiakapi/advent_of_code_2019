@@ -4,7 +4,7 @@ use crate::vec2::{AabbIteratorEx, Vec2us};
 use crate::HashMap;
 use std::collections::hash_map::Entry;
 use std::fmt;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
 
 module!(pt1: parse, pt2: parse);
 
@@ -208,21 +208,15 @@ fn parse(s: &str) -> Result<Map> {
     })
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Name(u8, u8);
 
 impl Name {
-    fn is_entrance(&self) -> bool {
-        *self == Name(b'A', b'A')
+    fn is_entrance(self) -> bool {
+        self == Name(b'A', b'A')
     }
-    fn is_exit(&self) -> bool {
-        *self == Name(b'Z', b'Z')
-    }
-}
-
-impl Hash for Name {
-    fn hash<H: Hasher>(&self, h: &mut H) {
-        h.write_u16((self.0 as u16) << 8 | (self.1 as u16));
+    fn is_exit(self) -> bool {
+        self == Name(b'Z', b'Z')
     }
 }
 

@@ -29,7 +29,6 @@ fn increasing_6_digits(range: RangeInclusive<u32>) -> impl Iterator<Item = u32> 
         digit_iter(nr)
             .skip(1)
             .zip(digit_iter(nr))
-            .clone()
             .all(|(left, right)| left <= right)
     })
 }

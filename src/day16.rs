@@ -1,3 +1,4 @@
+#![allow(clippy::unreadable_literal, clippy::identity_op)]
 use std::iter::repeat;
 
 module!(pt1: parse, pt2: parse);
@@ -42,6 +43,7 @@ fn fft_pattern(idx: usize) -> impl Iterator<Item = i32> + Clone {
 }
 
 #[inline]
+#[allow(clippy::needless_range_loop)]
 fn fft(digits: &[u8], output: &mut [u8]) {
     debug_assert_eq!(digits.len(), output.len());
     for idx in 0..digits.len() {
@@ -56,9 +58,7 @@ fn fft(digits: &[u8], output: &mut [u8]) {
 }
 
 fn fft100(digits: &mut Vec<u8>) {
-    let mut buffer = Vec::with_capacity(digits.len());
-    buffer.resize(digits.len(), 0);
-
+    let mut buffer = vec![0; digits.len()];
     for _ in 0..100 {
         fft(digits, &mut buffer);
         std::mem::swap(digits, &mut buffer);
@@ -117,7 +117,7 @@ fn pt1(mut digits: Vec<u8>) -> String {
 }
 
 fn pt2(digits: Vec<u8>) -> Result<String> {
-    let mut digits = digits.repeat(10_000);
+    let digits = digits.repeat(10_000);
     let offset = 0
         + digits[0] as usize * 1000000
         + digits[1] as usize * 100000
@@ -127,7 +127,7 @@ fn pt2(digits: Vec<u8>) -> Result<String> {
         + digits[5] as usize * 10
         + digits[6] as usize * 1;
 
-    let output = fft_multi(&mut digits, 100, offset, Some(8))?;
+    let output = fft_multi(&digits, 100, offset, Some(8))?;
 
     Ok(format!(
         "{:0>8}",

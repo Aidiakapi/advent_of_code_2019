@@ -161,7 +161,7 @@ impl<N: Node, C: Cost> AStar<N, C> {
                 };
                 counter += 1;
                 self.open.push(Open {
-                    node: node,
+                    node,
                     cost,
                     counter,
                 });

@@ -229,8 +229,8 @@ impl Adventure {
         let mut carrying = (1u32 << self.inventory.len()) - 1;
         let inventory = self.inventory.iter().cloned().collect::<Vec<_>>();
         let mut is_moving = false;
-
-        if self.vm.resume(|_input, output| {
+        
+        let solved = self.vm.resume(|_input, output| {
             is_moving = !is_moving;
             if is_moving {
                 output.push_str(move_dir);
@@ -255,7 +255,8 @@ impl Adventure {
                 output.pop();
                 Ok(true)
             }
-        })? {
+        })?;
+        if solved {
             let beg = self
                 .vm
                 .out_buff
@@ -343,10 +344,7 @@ fn dir_to_str(dir: Direction) -> &'static str {
 }
 
 fn pt1(memory: Vec<Value>) -> Result<String> {
-    if std::env::args_os()
-        .find(|arg| arg == "--interactive")
-        .is_some()
-    {
+    if std::env::args_os().any(|arg| arg == "--interactive") {
         use crate::intcode::ascii::interactive;
         println!();
         let mut vm = VM::new(growing_memory(memory));
@@ -400,9 +398,9 @@ fn parse_room(s: &str) -> Result<Room> {
             .map(|dir| Ok((dir?, Atom::from(""))))
             .collect::<Result<_>>()?,
         items: items
-            .unwrap_or(Vec::new())
+            .unwrap_or_default()
             .into_iter()
-            .map(|s: &str| Atom::from(s))
+            .map(Atom::from)
             .collect(),
     })
 }

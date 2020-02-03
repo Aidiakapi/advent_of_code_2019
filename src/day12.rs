@@ -44,7 +44,7 @@ fn move_bodies(bodies: &mut [CelestialBody]) {
 
 fn calculate_energy(bodies: &[CelestialBody]) -> i32 {
     bodies
-        .into_iter()
+        .iter()
         .map(|body| body.potential_energy() * body.kinetic_energy())
         .sum()
 }
@@ -63,7 +63,7 @@ struct BodyPart {
 }
 
 fn calculate_cycle_time(initial_parts: [BodyPart; 4]) -> Result<u64> {
-    let mut parts = initial_parts.clone();
+    let mut parts = initial_parts;
     let mut map = HashSet::new();
     let mut iteration = 0;
     loop {
@@ -89,8 +89,8 @@ fn calculate_cycle_time(initial_parts: [BodyPart; 4]) -> Result<u64> {
             }
         }
         // Update position
-        for i in 0..4 {
-            parts[i].position += parts[i].velocity;
+        for part in &mut parts {
+            part.position += part.velocity;
         }
     }
 }

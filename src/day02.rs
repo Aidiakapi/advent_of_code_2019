@@ -16,7 +16,7 @@ fn pt2(mut memory: Vec<Value>) -> Result<Value> {
             memory[2] = verb;
             let mut vm = VM::new(memory.clone());
             vm.run_all_no_io()?;
-            if Memory::read(&vm.memory, 0)? == 19690720 {
+            if Memory::read(&vm.memory, 0)? == 19_690_720 {
                 return Ok(noun * 100 + verb);
             }
         }

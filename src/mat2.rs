@@ -21,8 +21,8 @@ impl<T: Clone> Mat2<T> {
     #[rustfmt::skip] #[inline(always)] pub fn width(&self) -> usize { self.size.x }
     #[rustfmt::skip] #[inline(always)] pub fn height(&self) -> usize { self.size.y }
 
-    #[rustfmt::skip] #[inline(always)] pub fn iter<'s>(&'s self) -> Mat2Iter<'s, T> { self.into_iter() }
-    #[rustfmt::skip] #[inline(always)] pub fn iter_mut<'s>(&'s mut self) -> Mat2IterMut<'s, T> { self.into_iter() }
+    #[rustfmt::skip] #[inline(always)] pub fn iter(&self) -> Mat2Iter<'_, T> { self.into_iter() }
+    #[rustfmt::skip] #[inline(always)] pub fn iter_mut(&mut self) -> Mat2IterMut<'_, T> { self.into_iter() }
 }
 
 impl<T: Clone> Index<usize> for Mat2<T> {

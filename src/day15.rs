@@ -13,7 +13,7 @@ type Map = HashMap<Vec2, Tile>;
 
 module!(pt1: parse_intcode, pt2: parse_intcode);
 
-fn map_area(memory: &Vec<Value>) -> Result<(Map, Vec2)> {
+fn map_area(memory: &[Value]) -> Result<(Map, Vec2)> {
     let mut map = HashMap::new();
     let mut stack: Vec<Direction> = Vec::new();
     let mut position = Vec2::default();

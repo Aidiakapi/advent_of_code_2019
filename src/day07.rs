@@ -52,9 +52,9 @@ fn pt2(memory: Vec<i64>) -> Result<String> {
     ))
 }
 
-fn compute_output_pt2(memory: &Vec<i64>, phases: &[i64]) -> Result<i64> {
+fn compute_output_pt2(memory: &[i64], phases: &[i64]) -> Result<i64> {
     let mut inputs = vec![VecDeque::new(); 5];
-    let mut amplifiers = vec![VM::new(memory.clone()); 5];
+    let mut amplifiers = vec![VM::new(Vec::from(memory)); 5];
 
     for (i, &phase) in phases.iter().enumerate() {
         inputs[i].push_back(phase);
@@ -77,7 +77,7 @@ fn compute_output_pt2(memory: &Vec<i64>, phases: &[i64]) -> Result<i64> {
         }
     }
 
-    if inputs[0].len() != 1 || inputs[1..].iter().any(|v| v.len() != 0) {
+    if inputs[0].len() != 1 || inputs[1..].iter().any(|v| !v.is_empty()) {
         return Err(AoCError::Logic(
             "intcode program did not properly halt with only one output remaining",
         ));

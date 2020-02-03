@@ -220,7 +220,7 @@ where
                 let y = T::from_str_radix(value.trim(), radix)?;
                 if let Some(value) = iter.next() {
                     let z = T::from_str_radix(value.trim(), radix)?;
-                    if let None = iter.next() {
+                    if iter.next().is_none() {
                         return Ok(Vec3 { x, y, z });
                     }
                 }
@@ -302,7 +302,7 @@ where
         if let Some(first) = self.next() {
             let mut min = first.clone();
             let mut max = first;
-            while let Some(next) = self.next() {
+            for next in self {
                 match next.x.cmp(&min.x) {
                     Ordering::Less => min.x = next.x.clone(),
                     _ => {

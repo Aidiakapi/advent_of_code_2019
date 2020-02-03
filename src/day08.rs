@@ -28,6 +28,7 @@ fn parse_image_layers(size: Vec2us, data: &[u8]) -> Result<Vec<Mat2<u8>>> {
 
 fn pt1((size, layers): (Vec2us, Vec<u8>)) -> Result<usize> {
     let layers = parse_image_layers(size, &layers)?;
+    #[allow(clippy::naive_bytecount)]
     let (ones, twos) = layers
         .iter()
         .min_by_key(|layer| layer.data.iter().filter(|&&value| value == 0).count())

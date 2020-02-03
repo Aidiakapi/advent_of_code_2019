@@ -44,7 +44,7 @@ fn calculate_ore_cost<'s>(
     ore_demand
 }
 
-fn pt1<'s>(transformations: Transformations<'s>) -> u64 {
+fn pt1(transformations: Transformations) -> u64 {
     let mut spare = HashMap::new();
     calculate_ore_cost(&transformations, 1, &mut spare)
 }
@@ -73,7 +73,7 @@ fn find_fuel_produced_range<'s>(
     }
 }
 
-fn pt2<'s>(transformations: Transformations<'s>) -> u64 {
+fn pt2(transformations: Transformations) -> u64 {
     let mut spare = HashMap::new();
     let (mut low, mut high) = find_fuel_produced_range(&transformations, &mut spare);
 
@@ -121,7 +121,7 @@ fn parse(s: &str) -> IResult<&str, Transformations> {
         pair(terminated(from, tag(" => ")), molecule),
         |(from, into)| Transformation { from, into },
     );
-    fn create_transformations<'s>(list: Vec<Transformation>) -> Result<Transformations> {
+    fn create_transformations(list: Vec<Transformation>) -> Result<Transformations> {
         let mut transformations = HashMap::with_capacity(list.len());
         for transformation in list {
             match transformations.entry(transformation.into.1) {

@@ -11,14 +11,14 @@ struct NIC {
     did_yield: bool,
 }
 
-fn init_network(input: &Vec<Value>) -> (Vec<VecDeque<Value>>, Vec<NIC>) {
+fn init_network(input: &[Value]) -> (Vec<VecDeque<Value>>, Vec<NIC>) {
     let mut input_queues = vec![VecDeque::new(); 50];
     for i in 0..50 {
         input_queues[i as usize].push_back(i as Value);
     }
     let nics = vec![
         NIC {
-            vm: VM::new(growing_memory(input.clone())),
+            vm: VM::new(growing_memory(input.to_owned())),
             output_batch: ArrayVec::new(),
             did_yield: false,
         };
@@ -44,14 +44,12 @@ fn pt1(input: Vec<Value>) -> Result<Value> {
                     *out = if let Some(value) = input_queues[self_addr].pop_front() {
                         *did_yield = false;
                         Some(value)
+                    } else if *did_yield {
+                        *did_yield = false;
+                        Some(-1)
                     } else {
-                        if *did_yield {
-                            *did_yield = false;
-                            Some(-1)
-                        } else {
-                            *did_yield = true;
-                            None
-                        }
+                        *did_yield = true;
+                        None
                     };
                     Ok(())
                 }
@@ -59,10 +57,8 @@ fn pt1(input: Vec<Value>) -> Result<Value> {
                     output_batch.push(value);
                     if output_batch.len() == 3 {
                         let (addr, x, y) = (output_batch[0], output_batch[1], output_batch[2]);
-                        if addr == 255 {
-                            if result.is_none() {
-                                result = Some(y);
-                            }
+                        if addr == 255 && result.is_none() {
+                            result = Some(y);
                         }
                         if addr >= 0 && addr < 50 {
                             input_queues[addr as usize].push_back(x);
@@ -99,14 +95,12 @@ fn pt2(input: Vec<Value>) -> Result<Value> {
                     *out = if let Some(value) = input_queues[self_addr].pop_front() {
                         *did_yield = false;
                         Some(value)
+                    } else if *did_yield {
+                        *did_yield = false;
+                        Some(-1)
                     } else {
-                        if *did_yield {
-                            *did_yield = false;
-                            Some(-1)
-                        } else {
-                            *did_yield = true;
-                            None
-                        }
+                        *did_yield = true;
+                        None
                     };
                     Ok(())
                 }

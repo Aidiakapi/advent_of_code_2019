@@ -7,7 +7,7 @@ module!(pt1: parse, pt2: parse);
 struct ErisBugs(u32);
 
 impl ErisBugs {
-    fn grow_with_rules<F>(&self, get_neighbor_count: F) -> ErisBugs
+    fn grow_with_rules<F>(self, get_neighbor_count: F) -> ErisBugs
     where
         F: Fn(usize) -> u32,
     {
@@ -29,7 +29,7 @@ impl ErisBugs {
         ErisBugs(new)
     }
 
-    fn basic_rule(&self, i: usize) -> u32 {
+    fn basic_rule(self, i: usize) -> u32 {
         let (x, y) = (i % 5, i / 5);
         let mut neighbor_count = 0u32;
         if y > 0 {
@@ -47,12 +47,12 @@ impl ErisBugs {
         neighbor_count
     }
 
-    fn grow(&self) -> ErisBugs {
+    fn grow(self) -> ErisBugs {
         self.grow_with_rules(|i| self.basic_rule(i))
     }
 
-    fn grow_recursive(&self, outer: &ErisBugs, inner: &ErisBugs) -> ErisBugs {
-        const MASK: u32 = 0b1111111111110111111111111;
+    fn grow_recursive(self, outer: ErisBugs, inner: ErisBugs) -> ErisBugs {
+        const MASK: u32 = 0b11111_11111_11011_11111_11111;
         let mut bugs = ErisBugs(self.0 & MASK);
         bugs = bugs.grow_with_rules(|i| {
             let (x, y) = (i % 5, i / 5);
@@ -74,10 +74,10 @@ impl ErisBugs {
 
             // Inner neighbors
             match (x, y) {
-                (2, 1) => neighbor_count += (inner.0 & 0b0000000000000000000011111).count_ones(),
-                (2, 3) => neighbor_count += (inner.0 & 0b1111100000000000000000000).count_ones(),
-                (1, 2) => neighbor_count += (inner.0 & 0b0000100001000010000100001).count_ones(),
-                (3, 2) => neighbor_count += (inner.0 & 0b1000010000100001000010000).count_ones(),
+                (2, 1) => neighbor_count += (inner.0 & 0b00000_00000_00000_00000_11111).count_ones(),
+                (2, 3) => neighbor_count += (inner.0 & 0b11111_00000_00000_00000_00000).count_ones(),
+                (1, 2) => neighbor_count += (inner.0 & 0b00001_00001_00001_00001_00001).count_ones(),
+                (3, 2) => neighbor_count += (inner.0 & 0b10000_10000_10000_10000_10000).count_ones(),
                 _ => {}
             }
             neighbor_count
@@ -158,12 +158,12 @@ fn grow_recursive_levels(levels: &mut Vec<ErisBugs>, buffer: &mut Vec<ErisBugs>)
 
     // Construct the new layer
     levels.clear();
-    levels.push(buffer[0].grow_recursive(&ErisBugs(0), &buffer[1]));
+    levels.push(buffer[0].grow_recursive(ErisBugs(0), buffer[1]));
 
     for (idx, bugs) in buffer.iter().enumerate().skip(1).take(buffer.len() - 2) {
-        levels.push(bugs.grow_recursive(&buffer[idx - 1], &buffer[idx + 1]));
+        levels.push(bugs.grow_recursive(buffer[idx - 1], buffer[idx + 1]));
     }
-    levels.push(buffer[buffer.len() - 1].grow_recursive(&buffer[buffer.len() - 2], &ErisBugs(0)));
+    levels.push(buffer[buffer.len() - 1].grow_recursive(buffer[buffer.len() - 2], ErisBugs(0)));
 }
 
 fn pt2(init: ErisBugs) -> u32 {

@@ -263,7 +263,7 @@ fn program_length(prog: &[Command]) -> usize {
     total - 1
 }
 
-fn create_movement_program(path: &Vec<Command>) -> Option<Program> {
+fn create_movement_program(path: &[Command]) -> Option<Program> {
     type Range = std::ops::Range<usize>;
     #[derive(Debug, Clone, PartialEq, Eq)]
     enum Part {
@@ -274,12 +274,12 @@ fn create_movement_program(path: &Vec<Command>) -> Option<Program> {
 
     fn for_each_substitution_impl<F>(
         index: usize,
-        starts: &Vec<usize>,
+        starts: &[usize],
         length: usize,
         buffer: &mut Vec<usize>,
         callback: &mut F,
     ) where
-        F: FnMut(&Vec<usize>),
+        F: FnMut(&[usize]),
     {
         if index >= starts.len() {
             callback(buffer);
@@ -301,12 +301,12 @@ fn create_movement_program(path: &Vec<Command>) -> Option<Program> {
     }
 
     fn for_each_substitution<F>(
-        starts: &Vec<usize>,
+        starts: &[usize],
         length: usize,
         buffer: &mut Vec<usize>,
         mut callback: F,
     ) where
-        F: FnMut(&Vec<usize>),
+        F: FnMut(&[usize]),
     {
         if starts.is_empty() {
             return;
@@ -318,7 +318,7 @@ fn create_movement_program(path: &Vec<Command>) -> Option<Program> {
     let mut progs: [Option<Range>; 3] = [None, None, None];
     let mut pts = vec![Slice(0..path.len())];
     fn search_path(
-        path: &Vec<Command>,
+        path: &[Command],
         progs: &mut [Option<Range>; 3],
         pts: &mut Vec<Part>,
         prog_idx: usize,
@@ -369,7 +369,7 @@ fn create_movement_program(path: &Vec<Command>) -> Option<Program> {
             .skip(1) // Skips the pattenr to be matched
             .collect();
 
-        if matches.len() == 0 {
+        if matches.is_empty() {
             return false;
         }
         debug_assert!(matches.is_sorted_by_key(|(_, idx)| *idx));
@@ -430,7 +430,7 @@ fn create_movement_program(path: &Vec<Command>) -> Option<Program> {
                                 // Update range
                                 range = idx + offset + 1..range.end;
                                 next = iter.next();
-                                if range.len() == 0 {
+                                if range.is_empty() {
                                     continue 'outer;
                                 }
                             }

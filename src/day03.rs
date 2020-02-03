@@ -97,7 +97,7 @@ fn parse(s: &str) -> IResult<&str, (Wire, Wire)> {
         let mut iter = wires.into_iter();
         let a = iter.next().unwrap();
         let b = iter.next().unwrap();
-        return Ok((a, b));
+        Ok((a, b))
     })(s)
 }
 

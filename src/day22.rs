@@ -58,8 +58,8 @@ fn multiplicative_inverse(a: i128, n: i128) -> i128 {
 
     while newr != 0 {
         let quotient = r / newr;
-        t = t - quotient * newt;
-        r = r - quotient * newr;
+        t -= quotient * newt;
+        r -= quotient * newr;
         std::mem::swap(&mut t, &mut newt);
         std::mem::swap(&mut r, &mut newr);
     }
@@ -167,8 +167,8 @@ fn nr_in_position_after(
 }
 
 fn pt2(steps: Vec<Technique>) -> i128 {
-    const DECK_SIZE: i128 = 119315717514047;
-    const REPETITION_COUNT: u64 = 101741582076661;
+    const DECK_SIZE: i128 = 119_315_717_514_047;
+    const REPETITION_COUNT: u64 = 101_741_582_076_661;
 
     nr_in_position_after(&steps, 2020, DECK_SIZE, REPETITION_COUNT)
 }

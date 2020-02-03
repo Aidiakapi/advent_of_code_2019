@@ -9,7 +9,7 @@ use std::collections::VecDeque;
 module!(pt1: parse_intcode, pt2: parse_intcode);
 
 fn is_in_tractor_beam(
-    original_memory: &Vec<Value>,
+    original_memory: &[Value],
     vm: &mut VM<GrowingMemory>,
     pos: Vec2us,
 ) -> Result<bool> {
@@ -24,7 +24,7 @@ fn is_in_tractor_beam(
     vm.state = intcode::State::default();
     // If the offsets that change each iteration aren't universal
     // for all AoC inputs, this optimization should be disabled.
-    // vm.memory.0 = original_memory.clone();
+    // vm.memory.0 = original_memory.to_owned();
     vm.memory.0.truncate(original_memory.len());
     for &i in [132, 222, 221, 223, 224, 249].iter() {
         vm.memory.0[i] = original_memory[i];

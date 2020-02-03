@@ -21,22 +21,22 @@ impl KeyState {
     }
 
     #[inline]
-    fn with_key(&self, idx: u8) -> KeyState {
+    fn with_key(self, idx: u8) -> KeyState {
         debug_assert!(idx < 32);
         KeyState(self.0 & !(1u32 << idx))
     }
     #[inline]
-    fn has_key(&self, idx: u8) -> bool {
+    fn has_key(self, idx: u8) -> bool {
         debug_assert!(idx < 32);
         self.0 & (1u32 << idx) == 0
     }
 
     #[inline]
-    fn keys_left(&self) -> u32 {
+    fn keys_left(self) -> u32 {
         self.0.count_ones()
     }
     #[inline]
-    fn collected_all(&self) -> bool {
+    fn collected_all(self) -> bool {
         self.0 == 0
     }
 
@@ -343,18 +343,15 @@ fn parse(s: &str) -> IResult<&str, Map> {
             }
             let mut key_count = 0;
             for cell in &cells.data {
-                match cell {
-                    Cell::Key(v) => {
-                        let v = *v as usize;
-                        if v >= doors.len() || !doors[v] {
-                            return Err(AoCError::IncorrectInput(
-                                "multiple keys for door or key without door",
-                            ));
-                        }
-                        doors[v] = false;
-                        key_count += 1;
+                if let Cell::Key(v) = cell {
+                    let v = *v as usize;
+                    if v >= doors.len() || !doors[v] {
+                        return Err(AoCError::IncorrectInput(
+                            "multiple keys for door or key without door",
+                        ));
                     }
-                    _ => {}
+                    doors[v] = false;
+                    key_count += 1;
                 }
             }
             if door_count != key_count {

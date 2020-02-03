@@ -9,7 +9,7 @@ module!(pt1: parse_intcode, pt2: parse_intcode);
 
 // Will jump over a gap if there's a spot to land on
 // (!1 || !2 || !3) && 4
-const PT1_INSTRUCTIONS: &'static str = "\
+const PT1_INSTRUCTIONS: &str = "\
 OR A J
 AND B J
 AND C J
@@ -26,7 +26,7 @@ WALK
 // The AND A T, NOT T T, OR A T, resets T to true.
 //
 // (8 || (5 && (6 || 9))) && 4 && (!3 || !2 || !1)
-const PT2_INSTRUCTIONS: &'static str = "\
+const PT2_INSTRUCTIONS: &str = "\
 NOT J J
 AND E J
 OR F T

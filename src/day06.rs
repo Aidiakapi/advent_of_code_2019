@@ -36,7 +36,7 @@ fn parent_iter<'h, 's: 'h>(
     ParentIter(map, Some(start))
 }
 
-fn create_bodies<'s>(orbits: &Vec<Orbit<'s>>) -> Result<HashMap<&'s str, Body<'s>>> {
+fn create_bodies<'s>(orbits: &[Orbit<'s>]) -> Result<HashMap<&'s str, Body<'s>>> {
     let mut bodies: HashMap<&str, Body> = HashMap::with_capacity(orbits.len());
     for orbit in orbits {
         match bodies.entry(orbit.target) {

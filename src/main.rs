@@ -8,6 +8,7 @@
     maybe_uninit_extra,
     optin_builtin_traits,
     option_unwrap_none,
+    range_is_empty,
     stmt_expr_attributes,
     test,
     trait_alias,
