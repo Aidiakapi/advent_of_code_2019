@@ -17,3 +17,31 @@ where
         dfs_impl(successor, next);
     }
 }
+
+pub fn dfs_no_recursion<N, FN, FD, NI>(start: N, mut next: FN, mut done: FD) -> Option<N>
+where
+    FN: FnMut(N) -> NI,
+    FD: FnMut(&N) -> bool,
+    NI: IntoIterator<Item = N>,
+{
+    if done(&start) {
+        return Some(start);
+    }
+
+    let mut stack = Vec::new();
+    stack.push(next(start).into_iter());
+
+    while let Some(last) = stack.last_mut() {
+        if let Some(next_node) = last.next() {
+            if done(&next_node) {
+                return Some(next_node);
+            }
+
+            stack.push(next(next_node).into_iter());
+        } else {
+            stack.pop();
+        }
+    }
+
+    None
+}
