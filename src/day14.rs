@@ -116,7 +116,7 @@ fn parse(s: &str) -> IResult<&str, Transformations> {
             |(count, name)| Molecule(count, name),
         )(s)
     }
-    let from = separated_nonempty_list(tag(", "), molecule);
+    let from = separated_list1(tag(", "), molecule);
     let transformation = map(
         pair(terminated(from, tag(" => ")), molecule),
         |(from, into)| Transformation { from, into },
@@ -148,7 +148,7 @@ fn parse(s: &str) -> IResult<&str, Transformations> {
         Ok(transformations)
     }
     map_res(
-        separated_nonempty_list(line_ending, transformation),
+        separated_list1(line_ending, transformation),
         create_transformations,
     )(s)
 }

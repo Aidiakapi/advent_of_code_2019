@@ -527,7 +527,7 @@ pub mod util {
 
     pub fn parse_intcode(s: &str) -> nom::IResult<&str, Vec<Value>> {
         use crate::parsers::*;
-        separated_list(char(','), i64_str)(s)
+        separated_list1(char(','), i64_str)(s)
     }
 }
 
@@ -618,7 +618,7 @@ pub mod debugger {
         use std::fmt::Write;
         macro_rules! out {
             ($($tks:tt)*) => {
-                write!($($tks)*).expect("failed to write to string");
+                write!($($tks)*).expect("failed to write to string")
             };
         }
         let mut d = String::new();
@@ -670,7 +670,7 @@ pub mod debugger {
             };
 
             let modes = {
-                let mut mode_list = ArrayVec::<[Mode; 3]>::new();
+                let mut mode_list = ArrayVec::<Mode, 3>::new();
                 let mut modes = instruction / 100;
                 for idx in 0..in_params + out_params {
                     mode_list.push(match Mode::try_from(modes % 10) {
@@ -687,7 +687,7 @@ pub mod debugger {
             };
 
             let values = {
-                let mut values = ArrayVec::<[Value; 4]>::new();
+                let mut values = ArrayVec::<Value, 4>::new();
                 for idx in 0..in_params + out_params {
                     values.push(match vm.memory.read(ptr + 1 + idx as Value) {
                         Ok(value) => value,

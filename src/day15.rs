@@ -106,8 +106,8 @@ fn visualize_map(map: &Map) -> String {
     s
 }
 
-fn neighbors(map: &Map, pos: Vec2) -> ArrayVec<[Vec2; 4]> {
-    let mut neighbors: ArrayVec<[Vec2; 4]> = ArrayVec::new();
+fn neighbors(map: &Map, pos: Vec2) -> ArrayVec<Vec2, 4> {
+    let mut neighbors = ArrayVec::<Vec2, 4>::new();
     neighbors.push(Vec2::new(pos.x, pos.y - 1));
     neighbors.push(Vec2::new(pos.x, pos.y + 1));
     neighbors.push(Vec2::new(pos.x - 1, pos.y));

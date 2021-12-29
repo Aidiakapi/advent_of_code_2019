@@ -6,7 +6,7 @@ pub use nom::{
     character::complete::{alpha1, alphanumeric1, anychar, char, digit1, line_ending, one_of},
     combinator::{map, map_res, opt, verify},
     error::ErrorKind,
-    multi::{fold_many1, many0, many1, separated_list, separated_nonempty_list},
+    multi::{fold_many1, many0, many1, separated_list0, separated_list1},
     sequence::{delimited, pair, preceded, terminated, tuple},
     Err, IResult,
 };

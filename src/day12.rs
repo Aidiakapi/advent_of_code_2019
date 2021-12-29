@@ -134,7 +134,7 @@ fn parse(s: &str) -> IResult<&str, Vec<CelestialBody>> {
             velocity: Vec3::default(),
         },
     );
-    separated_nonempty_list(line_ending, celestial_body)(s)
+    separated_list1(line_ending, celestial_body)(s)
 }
 
 #[test]

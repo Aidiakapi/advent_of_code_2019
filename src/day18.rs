@@ -56,7 +56,7 @@ fn find_entrance(layout: &Mat2<Cell>) -> Vec2us {
 
 #[derive(Debug)]
 struct Node {
-    neighbors: ArrayVec<[(Vec2us, usize); 4]>,
+    neighbors: ArrayVec<(Vec2us, usize), 4>,
     cell: Cell,
 }
 
@@ -276,7 +276,7 @@ fn pt2(map: Map) -> Result<usize> {
 fn parse(s: &str) -> IResult<&str, Map> {
     use parsers::*;
     fn cell(s: &str) -> IResult<&str, Cell> {
-        let c = s.chars().next().ok_or(Err::Error((s, ErrorKind::Eof)))?;
+        let c = s.chars().next().ok_or(Err::Error(nom::error::Error::new(s, ErrorKind::Eof)))?;
         Ok((
             &s[1..],
             match c {
@@ -285,7 +285,7 @@ fn parse(s: &str) -> IResult<&str, Map> {
                 '.' => Cell::Open,
                 '#' => Cell::Wall,
                 '@' => Cell::Entrance,
-                _ => return Err(Err::Error((s, ErrorKind::OneOf))),
+                _ => return Err(Err::Error(nom::error::Error::new(s, ErrorKind::OneOf))),
             },
         ))
     }

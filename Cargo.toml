@@ -7,12 +7,12 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ahash = {version = "0.2", features = ["std", "compile-time-rng"]}
-arrayvec = "0.5"
-colored = "1.9"
-itertools = "0.8"
-nom = "5.0"
-num = "0.2"
+ahash = {version = "0.7", features = ["std", "compile-time-rng"]}
+arrayvec = "0.7"
+colored = "2.0"
+itertools = "0.10"
+nom = "7.0"
+num = "0.4"
 string_cache = { version = "0.8", default-features = false }
 thiserror = "1.0"
 

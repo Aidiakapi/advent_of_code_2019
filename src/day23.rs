@@ -7,7 +7,7 @@ module!(pt1: parse_intcode, pt2: parse_intcode);
 #[derive(Debug, Clone)]
 struct NIC {
     vm: VM<GrowingMemory>,
-    output_batch: ArrayVec<[Value; 3]>,
+    output_batch: ArrayVec<Value, 3>,
     did_yield: bool,
 }
 

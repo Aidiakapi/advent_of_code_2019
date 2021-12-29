@@ -2,7 +2,7 @@ module!(pt1: parse, pt2: parse);
 
 fn parse(s: &str) -> IResult<&str, Vec<i32>> {
     use parsers::*;
-    separated_list(line_ending, i32_str)(s)
+    separated_list1(line_ending, i32_str)(s)
 }
 
 fn pt1(modules: Vec<i32>) -> i32 {

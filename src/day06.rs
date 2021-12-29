@@ -109,7 +109,7 @@ fn parse(s: &str) -> IResult<&str, Vec<Orbit>> {
         pair(terminated(alphanumeric1, char(')')), alphanumeric1),
         |(target, object)| Orbit { target, object },
     );
-    separated_list(line_ending, orbit)(s)
+    separated_list1(line_ending, orbit)(s)
 }
 
 #[test]

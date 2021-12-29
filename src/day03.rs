@@ -89,8 +89,8 @@ fn parse(s: &str) -> IResult<&str, (Wire, Wire)> {
             distance,
         }
     });
-    let wire_commands = separated_list(char(','), command);
-    map_res(separated_list(line_ending, wire_commands), |wires| {
+    let wire_commands = separated_list1(char(','), command);
+    map_res(separated_list1(line_ending, wire_commands), |wires| {
         if wires.len() != 2 {
             return Err(AoCError::IncorrectInput("expected 2 wires"));
         }

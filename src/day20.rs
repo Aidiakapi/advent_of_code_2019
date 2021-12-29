@@ -94,8 +94,8 @@ fn parse(s: &str) -> Result<Map> {
             let pos = Vec2us::new(x, y);
             match c {
                 b' ' => {}
-                b'#' => layout.insert(pos, Cell::Wall).unwrap_none(),
-                b'.' => layout.insert(pos, Cell::Open).unwrap_none(),
+                b'#' => assert!(layout.insert(pos, Cell::Wall).is_none()),
+                b'.' => assert!(layout.insert(pos, Cell::Open).is_none()),
                 b'A'..=b'Z' => tp_chars.push((pos, c)),
                 _ => return Err(AoCError::IncorrectInput("unexpected char in input")),
             }

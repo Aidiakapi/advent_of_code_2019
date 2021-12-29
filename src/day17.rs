@@ -91,16 +91,15 @@ fn pt2(mut memory: Vec<Value>) -> Result<Value> {
     let (main, funcs) = create_path_and_program(&image)?.ok_or(AoCError::NoSolution)?;
 
     let mut input = String::new();
-    input.extend(
-        main.into_iter()
-            .map(|idx| match idx {
-                0 => 'A',
-                1 => 'B',
-                2 => 'C',
-                _ => unreachable!(),
-            })
-            .intersperse(','),
-    );
+    input.extend(Iterator::intersperse(
+        main.into_iter().map(|idx| match idx {
+            0 => 'A',
+            1 => 'B',
+            2 => 'C',
+            _ => unreachable!(),
+        }),
+        ',',
+    ));
     input.push('\n');
     for func in funcs.iter() {
         for (cmd, grp) in func.iter().cloned().group_by(|cmd| *cmd).into_iter() {

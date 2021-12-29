@@ -98,7 +98,7 @@ fn pt2(grid: Mat2<bool>) -> Result<i32> {
 fn parse(s: &str) -> IResult<&str, Mat2<bool>> {
     use parsers::*;
     let line = many1(map(one_of(".#"), |c| c == '#'));
-    let grid = separated_list(line_ending, line);
+    let grid = separated_list1(line_ending, line);
     map_res(grid, |lines| {
         let height = lines.len();
         if height == 0 {

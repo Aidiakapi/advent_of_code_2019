@@ -95,10 +95,11 @@ struct Adventure {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct Room {
     name: Atom,
     description: Atom,
-    connections: ArrayVec<[(Direction, Atom); 4]>,
+    connections: ArrayVec<(Direction, Atom), 4>,
     items: Vec<Atom>,
 }
 
@@ -375,8 +376,8 @@ fn parse_room(s: &str) -> Result<Room> {
     let items = opt(preceded(tag("\nItems here:\n"), many1(item)));
     let command = tag("\nCommand?\n");
 
-    let room_tuple = delimited(
-        fold_many1(char('\n'), (), |_, _| ()),
+    let mut room_tuple = delimited(
+        fold_many1(char('\n'), || (), |_, _| ()),
         tuple((name, description, doors, items)),
         command,
     );
