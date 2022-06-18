@@ -1,4 +1,4 @@
-use reqwest::{Client, StatusCode};
+use reqwest::{blocking::Client, StatusCode};
 use std::process::Command;
 
 fn main() {
@@ -24,13 +24,12 @@ fn main() {
     };
 
     let client = Client::new();
-    let (resp, text) = match client
+    let resp = match client
         .get(&url)
         .header("cookie", format!("session={}", token))
         .send()
-        .and_then(|mut resp| resp.text().map(|text| (resp, text)))
     {
-        Ok(x) => x,
+        Ok(resp) => resp,
         Err(err) => {
             eprintln!("http error:\n{:?}", err);
             std::process::exit(-1);
@@ -41,6 +40,13 @@ fn main() {
         std::process::exit(-1);
     }
 
+    let text = match resp.text() {
+        Ok(text) => text,
+        Err(err) => {
+            eprintln!("http text error:\n{:?}", err);
+            std::process::exit(-1);
+        }
+    };
     let file_path = format!("./data/day{:0>2}.txt", day_nr);
     match std::fs::create_dir_all("./data/").and_then(|_| std::fs::write(&file_path, text)) {
         Ok(()) => {}

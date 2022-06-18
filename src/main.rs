@@ -5,7 +5,6 @@
     hash_set_entry,
     is_sorted,
     iter_intersperse,
-    maybe_uninit_extra,
     negative_impls,
     stmt_expr_attributes,
     test,

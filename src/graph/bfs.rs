@@ -33,7 +33,7 @@ where
         let entry = visited.entry(current.0);
         if let Entry::Occupied(_) = entry {
         } else {
-            let entry = entry.insert(current.1);
+            let entry = entry.insert_entry(current.1);
             let node = entry.key();
             let meta = entry.get();
             if done(node, meta) {

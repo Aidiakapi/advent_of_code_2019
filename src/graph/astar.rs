@@ -228,7 +228,7 @@ mod tests {
             }
 
             if matched_count == 0 {
-                Err(nom::Err::Error((s, ErrorKind::Many1)))
+                Err(nom::Err::Error(nom::error::Error::new(s, ErrorKind::Many1)))
             } else {
                 Ok((&s[matched_count..], &s[0..matched_count]))
             }

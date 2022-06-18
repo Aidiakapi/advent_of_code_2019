@@ -20,13 +20,12 @@ where
     FN: FnMut(&N) -> NI,
     NI: IntoIterator<Item = N>,
 {
-    let entry = visited.entry(current);
-    if let Entry::Occupied(_) = &entry {
-        return;
-    }
-    let entry = entry.insert(());
-    let current = entry.key();
+    let entry = match visited.entry(current) {
+        Entry::Occupied(_) => return,
+        Entry::Vacant(e) => e.insert_entry(()),
+    };
 
+    let current = entry.key();
     for successor in next(current) {
         flood_impl(visited, successor, next);
     }
